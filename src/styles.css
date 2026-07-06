@@ -1,0 +1,57 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-rose-50: #fff1f3;
+  --color-rose-100: #ffe0e5;
+  --color-rose-200: #ffc7d0;
+  --color-rose-300: #ff9cab;
+  --color-rose-400: #f66b7c;
+  --color-rose-500: #e54153;
+  --color-rose-600: #d52f43;
+  --color-rose-700: #b82032;
+  --color-pink-100: #ffe0e5;
+  --color-pink-200: #ffc7d0;
+  --color-pink-400: #f66b7c;
+  --color-pink-500: #e54153;
+}
+
+.faq-font {
+  font-family:
+    "Nunito",
+    "Inter",
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+}
+
+.template-preview-image {
+  position: absolute;
+  left: 0;
+  top: 0;
+  min-height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .template-preview-image {
+    transition:
+      top 8s ease,
+      transform 8s ease;
+  }
+
+  .group:hover .template-preview-image {
+    top: 100%;
+    transform: translateY(-100%);
+  }
+}
+
+.template-preview-image.is-preview-active {
+  top: 100%;
+  transform: translateY(-100%);
+  transition:
+    top 8s ease,
+    transform 8s ease;
+}
