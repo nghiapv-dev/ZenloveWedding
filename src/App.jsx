@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import FinalCTA from "./components/FinalCTA.jsx";
 import FloatingButtons from "./components/FloatingButtons.jsx";
 import Header from "./components/Header.jsx";
@@ -11,9 +11,13 @@ import Process from "./components/Process.jsx";
 import Feedback from "./components/Feedback.jsx";
 import FAQ from "./components/FAQ.jsx";
 import OrderContact from "./components/OrderContact.jsx";
+import AdminMusic from "./components/AdminMusic.jsx";
 
 function App() {
+  const isMusicAdmin = window.location.pathname === "/admin/music";
   const [activeDemoCategory, setActiveDemoCategory] = useState(null);
+
+  if (isMusicAdmin) return <AdminMusic />;
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_46%,#ffffff_100%)] text-slate-950">
