@@ -384,7 +384,7 @@ export const serviceDemoSections = {
 export const packages = [
   {
   name: "Combo Slide & Thiệp",
-  price: "269K",
+  price: "250K",
   fit: "Dành cho cặp đôi muốn sở hữu thiệp cưới online và video slide cưới với mức chi phí tiết kiệm.",
   features: [
     "01 Thiệp cưới Online",
@@ -407,7 +407,7 @@ export const packages = [
   },
   {
   name: "Combo",
-  price: "300K",
+  price: "299K",
   fit: "Chọn 1 trong 2 gói dịch vụ tiết kiệm.",
   features: [
     "Combo 1: Thiệp Online + Màn sao băng + Slide cưới",
@@ -416,7 +416,7 @@ export const packages = [
 },
 {
   name: "Combo Tiết Kiệm",
-  price: "200K",
+  price: "199K",
   fit: "Phù hợp cho cặp đôi muốn có video trình chiếu nổi bật với chi phí hợp lý.",
   features: [
     "Slide cưới",
