@@ -6,6 +6,7 @@ import {
   Lock,
   LogOut,
   Music,
+  Pencil,
   Plus,
   Search,
   Trash2,
@@ -156,6 +157,8 @@ function AdminMusic() {
   const [uploadCategory, setUploadCategory] = useState(categories[1]);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [editingSongId, setEditingSongId] = useState(null);
+  const [draftTitle, setDraftTitle] = useState("");
 
   const loadSongs = async () => {
     setIsLoading(true);
@@ -322,6 +325,33 @@ function AdminMusic() {
     }
   };
 
+  const startEditing = (song) => {
+    setEditingSongId(song.id);
+    setDraftTitle(song.title);
+    setMessage("");
+  };
+
+  const saveTitle = async (song) => {
+    const title = draftTitle.trim();
+    if (!title) {
+      setMessage("Tên bài hát không được để trống.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.from("music_tracks").update({ title }).eq("id", song.id);
+      if (error) throw error;
+      setSongs((current) => current.map((item) => (item.id === song.id ? { ...item, title } : item)));
+      setEditingSongId(null);
+      setMessage("Đã cập nhật tên bài hát.");
+    } catch (error) {
+      setMessage(error.message || "Không thể cập nhật tên bài hát.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setSongs([]);
@@ -434,21 +464,38 @@ function AdminMusic() {
                   key={song.id}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-extrabold text-slate-950">{song.title}</h3>
+                    <div className="min-w-0 flex-1">
+                      {editingSongId === song.id ? (
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <input
+                            className="h-10 min-w-0 flex-1 rounded-xl border border-rose-200 bg-rose-50/50 px-3 text-sm font-bold outline-none focus:border-rose-400"
+                            onChange={(event) => setDraftTitle(event.target.value)}
+                            value={draftTitle}
+                          />
+                          <div className="flex gap-2">
+                            <button className="h-10 rounded-xl bg-rose-500 px-3 text-sm font-extrabold text-white disabled:opacity-50" disabled={isLoading} onClick={() => saveTitle(song)} type="button">Lưu</button>
+                            <button className="h-10 rounded-xl border border-rose-100 px-3 text-sm font-extrabold text-slate-600" onClick={() => setEditingSongId(null)} type="button">Hủy</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <h3 className="break-words font-extrabold text-slate-950">{song.title}</h3>
+                      )}
                       <p className="mt-1 text-xs font-bold text-rose-500">{song.category}</p>
                       <p className="mt-1 text-xs text-slate-400">
                         {song.file_name} • {formatSize(song.file_size)}
                       </p>
                     </div>
-                    <button
-                      className="inline-flex size-9 items-center justify-center rounded-full bg-rose-50 text-rose-500 transition hover:bg-rose-500 hover:text-white"
-                      onClick={() => handleDelete(song)}
-                      type="button"
-                      aria-label={`Xóa ${song.title}`}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex shrink-0 gap-2">
+                      {editingSongId !== song.id ? <button className="inline-flex size-9 items-center justify-center rounded-full bg-rose-50 text-rose-500 transition hover:bg-rose-500 hover:text-white" onClick={() => startEditing(song)} type="button" aria-label={`Sửa tên ${song.title}`}><Pencil size={16} /></button> : null}
+                      <button
+                        className="inline-flex size-9 items-center justify-center rounded-full bg-rose-50 text-rose-500 transition hover:bg-rose-500 hover:text-white"
+                        onClick={() => handleDelete(song)}
+                        type="button"
+                        aria-label={`Xóa ${song.title}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                   <audio className="mt-3 w-full" controls preload="metadata" src={song.url} />
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row">
