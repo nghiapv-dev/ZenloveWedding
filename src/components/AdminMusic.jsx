@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeft,
   Download,
   ExternalLink,
   Lock,
@@ -147,6 +148,7 @@ function LoginForm({ onLogin }) {
 
 function AdminMusic() {
   const [session, setSession] = useState(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [songs, setSongs] = useState([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Tất cả");
@@ -185,13 +187,21 @@ function AdminMusic() {
   useEffect(() => {
     if (!isSupabaseConfigured) return;
 
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setIsCheckingSession(false);
+    });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
+      setIsCheckingSession(false);
     });
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!isCheckingSession && !session) window.location.replace("/admin");
+  }, [isCheckingSession, session]);
 
   useEffect(() => {
     if (session) loadSongs();
@@ -318,11 +328,15 @@ function AdminMusic() {
   };
 
   if (!isSupabaseConfigured) return <SetupNotice />;
-  if (!session) return <LoginForm onLogin={setSession} />;
+  if (!session) return null;
 
   return (
     <main className="min-h-screen bg-[#fffafa] px-3 py-4 text-slate-950 sm:px-6 sm:py-7 lg:px-10">
       <section className="mx-auto max-w-7xl">
+        <a className="mb-5 inline-flex items-center gap-2 text-sm font-extrabold text-slate-600 transition hover:text-[#E54153]" href="/admin/dashboard">
+          <ArrowLeft size={17} />
+          Dashboard
+        </a>
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-rose-100 bg-white p-4 shadow-[0_14px_36px_rgba(229,65,83,0.08)] sm:p-6">
           <div className="flex items-center gap-3">
             <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-[#E54153] text-white shadow-[0_10px_22px_rgba(229,65,83,0.22)]">

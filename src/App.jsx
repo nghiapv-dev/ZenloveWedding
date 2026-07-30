@@ -16,6 +16,7 @@ import AdminTemplates from "./components/AdminTemplates.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx";
 import AdminSystem from "./components/AdminSystem.jsx";
 import AdminShowcase from "./components/AdminShowcase.jsx";
+import MusicPlanner from "./components/MusicPlanner.jsx";
 
 function App() {
   const isMusicAdmin = window.location.pathname === "/admin/music";
@@ -43,6 +44,7 @@ function App() {
           onSelectDemoCategory={setActiveDemoCategory}
         />
         <DemoShowcase activeCategory={activeDemoCategory} />
+        <MusicPlanner />
         <Pricing />
         <WhyChoose />
         <Process />
