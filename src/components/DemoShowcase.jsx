@@ -1,12 +1,61 @@
-﻿import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ExternalLink, Link2 } from "lucide-react";
 import { serviceDemoSections } from "../data/siteData.jsx";
 import ImageModal from "./ImageModal.jsx";
+import { isSupabaseConfigured, supabase } from "../lib/supabase.js";
 
 function DemoShowcase({ activeCategory }) {
   const activeSection = activeCategory ? serviceDemoSections[activeCategory] : null;
   const [previewImage, setPreviewImage] = useState(null);
   const [activeImageKey, setActiveImageKey] = useState(null);
+  const [cloudWeddingTemplates, setCloudWeddingTemplates] = useState(null);
+  const [cloudShowcases, setCloudShowcases] = useState({ background: [], slide: [] });
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return undefined;
+
+    let mounted = true;
+    const loadCloudTemplates = async () => {
+      const { data, error } = await supabase
+        .from("wedding_templates")
+        .select("title, url, image_url, sort_order")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (!error && mounted && data?.length) {
+        setCloudWeddingTemplates(data.map((item, index) => ({
+          title: item.title || "Mẫu " + (index + 1),
+          url: item.url,
+          image: item.image_url,
+        })));
+      }
+    };
+
+    loadCloudTemplates();
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return undefined;
+    let mounted = true;
+    supabase.from("showcase_templates").select("type, title, url, image_url, sort_order").order("sort_order", { ascending: true }).then(({ data, error }) => {
+      if (error || !mounted || !data) return;
+      const next = { background: [], slide: [] };
+      data.forEach((item, index) => {
+        if (next[item.type]) next[item.type].push({ title: item.title || "Mẫu " + (index + 1), url: item.url, image: item.image_url });
+      });
+      setCloudShowcases(next);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const currentShowcaseType = activeCategory === "video" ? "slide" : activeCategory === "background" ? "background" : null;
+  const currentCloudShowcases = currentShowcaseType ? cloudShowcases[currentShowcaseType] : [];
+  const displayedSection = activeCategory === "wedding" && cloudWeddingTemplates?.length
+    ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: [...activeSection.groups[0].items, ...cloudWeddingTemplates] }] }
+    : currentCloudShowcases.length
+      ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: [...activeSection.groups[0].items, ...currentCloudShowcases] }] }
+      : activeSection;
 
   return (
     <section
@@ -28,15 +77,15 @@ function DemoShowcase({ activeCategory }) {
           <>
             <div className="mb-5 border-b border-rose-100 pb-5 sm:mb-7">
               <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-rose-500">
-                {activeSection.eyebrow}
+                {displayedSection.eyebrow}
               </p>
               <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-extrabold text-slate-950 sm:text-2xl lg:text-3xl">
-                    {activeSection.title}
+                    {displayedSection.title}
                   </h2>
-                  {activeSection.subtitle ? (
-                    <p className="mt-2 text-sm text-slate-500">{activeSection.subtitle}</p>
+                  {displayedSection.subtitle ? (
+                    <p className="mt-2 text-sm text-slate-500">{displayedSection.subtitle}</p>
                   ) : null}
                 </div>
                 <a
@@ -51,9 +100,9 @@ function DemoShowcase({ activeCategory }) {
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              {activeSection.groups.map((group) => {
+              {displayedSection.groups.map((group) => {
                 const hasImage = group.items.some((item) => item.image);
-                const isLandscape = ["slide", "landscape"].includes(activeSection.variant);
+                const isLandscape = ["slide", "landscape"].includes(displayedSection.variant);
 
                 return (
                   <section
@@ -138,7 +187,7 @@ function DemoShowcase({ activeCategory }) {
                                     isActiveImage ? "opacity-100" : "opacity-0"
                                   }`}
                                 >
-                                  {activeSection.ctaLabel || "Xem mẫu"}
+                                  {displayedSection.ctaLabel || "Xem mẫu"}
                                 </span>
                               </div>
                             </a>

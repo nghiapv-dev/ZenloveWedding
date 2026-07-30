@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Download,
   ExternalLink,
@@ -122,21 +122,21 @@ function LoginForm({ onLogin }) {
             Đăng nhập tài khoản admin Supabase để upload, nghe thử và tải nhạc cưới trên mọi thiết bị.
           </p>
           <input
-            className="mt-6 h-12 w-full rounded-2xl border border-rose-100 bg-rose-50/50 px-4 text-sm font-bold outline-none transition focus:border-rose-400 focus:bg-white"
+            className="mt-6 h-12 w-full rounded-xl border border-rose-100 bg-[#fffafa] px-4 text-sm font-bold outline-none transition focus:border-rose-400 focus:bg-white"
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Email admin"
             type="email"
             value={email}
           />
           <input
-            className="mt-3 h-12 w-full rounded-2xl border border-rose-100 bg-rose-50/50 px-4 text-sm font-bold outline-none transition focus:border-rose-400 focus:bg-white"
+            className="mt-3 h-12 w-full rounded-xl border border-rose-100 bg-[#fffafa] px-4 text-sm font-bold outline-none transition focus:border-rose-400 focus:bg-white"
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Mật khẩu"
             type="password"
             value={password}
           />
           {message ? <p className="mt-3 text-sm font-bold text-rose-500">{message}</p> : null}
-          <button className="mt-5 h-12 w-full rounded-full bg-rose-500 text-sm font-extrabold text-white shadow-lg shadow-rose-200 transition hover:bg-rose-600 disabled:opacity-60" disabled={isLoading}>
+          <button className="mt-5 h-12 w-full rounded-xl bg-[#E54153] text-sm font-extrabold text-white shadow-lg shadow-rose-200 transition hover:bg-[#c93345] disabled:opacity-60" disabled={isLoading}>
             {isLoading ? "Đang đăng nhập..." : "Mở kho nhạc"}
           </button>
         </form>
@@ -321,21 +321,21 @@ function AdminMusic() {
   if (!session) return <LoginForm onLogin={setSession} />;
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff7f8_0%,#ffffff_45%,#fff7f8_100%)] px-4 py-6 text-slate-950 sm:px-6 lg:px-10">
-      <section className="mx-auto max-w-6xl">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-rose-100 bg-white p-4 shadow-[0_12px_32px_rgba(229,65,83,0.08)] sm:p-5">
+    <main className="min-h-screen bg-[#fffafa] px-3 py-4 text-slate-950 sm:px-6 sm:py-7 lg:px-10">
+      <section className="mx-auto max-w-7xl">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-rose-100 bg-white p-4 shadow-[0_14px_36px_rgba(229,65,83,0.08)] sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-rose-500 text-white">
+            <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-[#E54153] text-white shadow-[0_10px_22px_rgba(229,65,83,0.22)]">
               <Music size={24} />
             </div>
             <div>
           
-              <h1 className="text-xl font-extrabold sm:text-2xl">Kho nhạc cưới Zenlove</h1>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#E54153]">Zenlove Wedding / Admin</p><h1 className="mt-1 text-xl font-extrabold sm:text-2xl">Quản lý kho nhạc cưới</h1>
               <p className="mt-1 text-xs text-slate-500">Tài khoản: {session.user.email}</p>
             </div>
           </div>
           <button
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-rose-100 bg-white px-4 text-sm font-bold text-slate-600 transition hover:border-rose-300 hover:text-rose-500"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-rose-100 bg-white px-4 text-sm font-bold text-slate-600 transition hover:border-rose-300 hover:text-rose-500"
             onClick={handleLogout}
             type="button"
           >
@@ -344,15 +344,16 @@ function AdminMusic() {
           </button>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-          <aside className="rounded-3xl border border-rose-100 bg-white p-4 shadow-[0_12px_32px_rgba(229,65,83,0.08)] sm:p-5">
-            <h2 className="text-lg font-extrabold">Thêm nhạc mới</h2>
+        <div className="mb-5 grid gap-3 sm:grid-cols-3"><div className="rounded-2xl border border-rose-100 bg-white px-4 py-3"><p className="text-xs font-bold text-slate-500">Tổng bài nhạc</p><p className="mt-1 text-2xl font-extrabold">{songs.length}</p></div><div className="rounded-2xl border border-rose-100 bg-white px-4 py-3"><p className="text-xs font-bold text-slate-500">Đang hiển thị</p><p className="mt-1 text-2xl font-extrabold">{filteredSongs.length}</p></div><div className="rounded-2xl border border-rose-100 bg-[#fff1f3] px-4 py-3"><p className="text-xs font-bold text-[#b92d3e]">Trạng thái kho</p><p className="mt-1 text-sm font-extrabold text-[#E54153]">Cloud đã kết nối</p></div></div>
+        <div className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
+          <aside className="rounded-3xl border border-rose-100 bg-white p-4 shadow-[0_14px_36px_rgba(229,65,83,0.08)] sm:p-5">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#E54153]">Thư viện âm thanh</p><h2 className="mt-1 text-lg font-extrabold">Thêm nhạc mới</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               Chọn file MP3 từ máy để tải lên
             </p>
             <label className="mt-5 block text-sm font-bold text-slate-700">Danh mục</label>
             <select
-              className="mt-2 h-12 w-full rounded-2xl border border-rose-100 bg-rose-50/50 px-4 text-sm font-bold outline-none focus:border-rose-400"
+              className="mt-2 h-12 w-full rounded-xl border border-rose-100 bg-[#fffafa] px-4 text-sm font-bold outline-none focus:border-rose-400"
               onChange={(event) => setUploadCategory(event.target.value)}
               value={uploadCategory}
             >
@@ -360,7 +361,7 @@ function AdminMusic() {
                 <option key={item}>{item}</option>
               ))}
             </select>
-            <label className="mt-4 flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-rose-200 bg-rose-50/60 px-4 text-center transition hover:border-rose-400 hover:bg-rose-50">
+            <label className="mt-4 flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-rose-200 bg-[#fffafa] px-4 text-center transition hover:border-rose-400 hover:bg-rose-50">
               <Upload className="mb-3 text-rose-500" size={30} />
               <span className="text-sm font-extrabold text-slate-900">Bấm để upload MP3 lên cloud</span>
               <span className="mt-1 text-xs text-slate-500">Có thể chọn nhiều bài cùng lúc</span>
@@ -373,19 +374,19 @@ function AdminMusic() {
             ) : null}
           </aside>
 
-          <section className="rounded-3xl border border-rose-100 bg-white p-4 shadow-[0_12px_32px_rgba(229,65,83,0.08)] sm:p-5">
+          <section className="rounded-3xl border border-rose-100 bg-white p-4 shadow-[0_14px_36px_rgba(229,65,83,0.08)] sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row">
               <label className="relative flex-1">
                 <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-rose-500" size={18} />
                 <input
-                  className="h-12 w-full rounded-2xl border border-rose-100 bg-rose-50/50 pl-11 pr-4 text-sm font-semibold outline-none focus:border-rose-400 focus:bg-white"
+                  className="h-12 w-full rounded-xl border border-rose-100 bg-[#fffafa] pl-11 pr-4 text-sm font-semibold outline-none focus:border-rose-400 focus:bg-white"
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Tìm tên bài, danh mục..."
                   value={query}
                 />
               </label>
               <select
-                className="h-12 rounded-2xl border border-rose-100 bg-rose-50/50 px-4 text-sm font-bold outline-none focus:border-rose-400"
+                className="h-12 rounded-xl border border-rose-100 bg-[#fffafa] px-4 text-sm font-bold outline-none focus:border-rose-400"
                 onChange={(event) => setCategory(event.target.value)}
                 value={category}
               >
@@ -438,7 +439,7 @@ function AdminMusic() {
                   <audio className="mt-3 w-full" controls preload="metadata" src={song.url} />
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                     <a
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-rose-500 px-5 text-sm font-extrabold text-white shadow-lg shadow-rose-100 transition hover:bg-rose-600"
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#E54153] px-5 text-sm font-extrabold text-white shadow-lg shadow-rose-100 transition hover:bg-[#c93345]"
                       download={song.file_name}
                       href={song.url}
                     >
@@ -446,7 +447,7 @@ function AdminMusic() {
                       Tải MP3
                     </a>
                     <a
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-rose-100 px-5 text-sm font-extrabold text-rose-500 transition hover:border-rose-300 hover:bg-rose-50"
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-100 px-5 text-sm font-extrabold text-rose-500 transition hover:border-rose-300 hover:bg-rose-50"
                       href={song.url}
                       target="_blank"
                       rel="noreferrer"
@@ -458,14 +459,14 @@ function AdminMusic() {
                 </article>
               ))}
               {filteredSongs.length > songsPerPage ? (
-                <div className="flex flex-col gap-3 rounded-2xl border border-rose-100 bg-rose-50/50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 rounded-xl border border-rose-100 bg-[#fffafa] p-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-center text-sm font-bold text-slate-500 sm:text-left">
                     Hiển thị {(safeCurrentPage - 1) * songsPerPage + 1}-
                     {Math.min(safeCurrentPage * songsPerPage, filteredSongs.length)} trong {filteredSongs.length} bài
                   </p>
                   <div className="grid grid-cols-2 gap-2 sm:flex">
                     <button
-                      className="h-10 rounded-full border border-rose-100 bg-white px-4 text-sm font-extrabold text-slate-600 transition hover:border-rose-300 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="h-10 rounded-xl border border-rose-100 bg-white px-4 text-sm font-extrabold text-slate-600 transition hover:border-rose-300 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
                       disabled={safeCurrentPage === 1}
                       onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                       type="button"
@@ -473,7 +474,7 @@ function AdminMusic() {
                       Trước
                     </button>
                     <button
-                      className="h-10 rounded-full bg-rose-500 px-4 text-sm font-extrabold text-white shadow-lg shadow-rose-100 transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="h-10 rounded-xl bg-[#E54153] px-4 text-sm font-extrabold text-white shadow-lg shadow-rose-100 transition hover:bg-[#c93345] disabled:cursor-not-allowed disabled:opacity-40"
                       disabled={safeCurrentPage === totalPages}
                       onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                       type="button"
