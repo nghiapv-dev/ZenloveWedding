@@ -12,7 +12,7 @@ create table if not exists public.wedding_templates (
   image_path text unique,
   image_url text not null,
   sort_order integer not null default 0,
-  zenlove_id text unique,
+  zenlove_id text,
   slug text,
   thumbnail_key text,
   long_thumbnail_key text,
@@ -37,8 +37,7 @@ alter table public.wedding_templates add column if not exists source text not nu
 alter table public.wedding_templates add column if not exists synced_at timestamptz;
 alter table public.wedding_templates add column if not exists updated_at timestamptz not null default now();
 create unique index if not exists wedding_templates_zenlove_id_key
-on public.wedding_templates (zenlove_id)
-where zenlove_id is not null;
+on public.wedding_templates (zenlove_id);
 
 alter table public.wedding_templates enable row level security;
 
