@@ -22,8 +22,8 @@ function DemoShowcase({ activeCategory }) {
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
 
-      if (!error && mounted && data?.length) {
-        setCloudWeddingTemplates(data.map((item, index) => ({
+      if (!error && mounted) {
+        setCloudWeddingTemplates((data || []).map((item, index) => ({
           title: item.title || "Mẫu " + (index + 1),
           url: item.url,
           image: item.image_url,
@@ -52,7 +52,7 @@ function DemoShowcase({ activeCategory }) {
   const currentShowcaseType = activeCategory === "video" ? "slide" : activeCategory === "background" ? "background" : null;
   const currentCloudShowcases = currentShowcaseType ? cloudShowcases[currentShowcaseType] : [];
   const displayedSection = activeCategory === "wedding" && cloudWeddingTemplates?.length
-    ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: [...activeSection.groups[0].items, ...cloudWeddingTemplates] }] }
+    ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: cloudWeddingTemplates }] }
     : currentCloudShowcases.length
       ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: [...activeSection.groups[0].items, ...currentCloudShowcases] }] }
       : activeSection;

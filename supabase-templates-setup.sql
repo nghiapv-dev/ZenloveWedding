@@ -6,14 +6,39 @@ on conflict (id) do update set public = true;
 
 create table if not exists public.wedding_templates (
   id uuid primary key default gen_random_uuid(),
-  owner_id uuid not null default auth.uid(),
+  owner_id uuid default auth.uid(),
   title text not null,
   url text not null,
-  image_path text not null unique,
+  image_path text unique,
   image_url text not null,
   sort_order integer not null default 0,
-  created_at timestamptz not null default now()
+  zenlove_id text unique,
+  slug text,
+  thumbnail_key text,
+  long_thumbnail_key text,
+  template_type text,
+  category_id text,
+  source text not null default 'manual' check (source in ('manual', 'zenlove')),
+  synced_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
+
+-- Makes this script safe to run for the original schema as well.
+alter table public.wedding_templates alter column owner_id drop not null;
+alter table public.wedding_templates alter column image_path drop not null;
+alter table public.wedding_templates add column if not exists zenlove_id text;
+alter table public.wedding_templates add column if not exists slug text;
+alter table public.wedding_templates add column if not exists thumbnail_key text;
+alter table public.wedding_templates add column if not exists long_thumbnail_key text;
+alter table public.wedding_templates add column if not exists template_type text;
+alter table public.wedding_templates add column if not exists category_id text;
+alter table public.wedding_templates add column if not exists source text not null default 'manual';
+alter table public.wedding_templates add column if not exists synced_at timestamptz;
+alter table public.wedding_templates add column if not exists updated_at timestamptz not null default now();
+create unique index if not exists wedding_templates_zenlove_id_key
+on public.wedding_templates (zenlove_id)
+where zenlove_id is not null;
 
 alter table public.wedding_templates enable row level security;
 

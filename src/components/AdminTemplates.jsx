@@ -7,6 +7,7 @@ import {
   Lock,
   LogOut,
   Plus,
+  RefreshCw,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -259,6 +260,29 @@ function AdminTemplates() {
       setLoading(false);
     }
   };
+  const syncZenLoveTemplates = async () => {
+    if (!session?.access_token) return;
+    setLoading(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/zenlove/templates", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Không thể đồng bộ ZenLove.");
+      setMessage(`Đã đồng bộ ${result.synced} mẫu từ ZenLove.`);
+      await loadTemplates();
+    } catch (error) {
+      setMessage(error.message || "Không thể đồng bộ ZenLove.");
+    } finally {
+      setLoading(false);
+    }
+  };
   if (!isSupabaseConfigured) return <SetupNotice />;
   if (!session) return null;
   if (schemaMissing) return <SchemaMissing />;
@@ -284,14 +308,25 @@ function AdminTemplates() {
               </p>
             </div>
           </div>
-          <button
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-rose-100 px-4 text-sm font-bold text-slate-600"
-            type="button"
-            onClick={() => supabase.auth.signOut()}
-          >
-            <LogOut size={16} />
-            Thoát
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-rose-500 px-4 text-sm font-bold text-white disabled:opacity-60"
+              type="button"
+              disabled={loading}
+              onClick={syncZenLoveTemplates}
+            >
+              <RefreshCw className={loading ? "animate-spin" : ""} size={16} />
+              Đồng bộ ZenLove
+            </button>
+            <button
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-rose-100 px-4 text-sm font-bold text-slate-600"
+              type="button"
+              onClick={() => supabase.auth.signOut()}
+            >
+              <LogOut size={16} />
+              Thoát
+            </button>
+          </div>
         </header>
         <div className="grid gap-4 lg:grid-cols-[370px_1fr]">
           <form
@@ -362,14 +397,21 @@ function AdminTemplates() {
                     alt={item.title}
                   />
                   <div className="flex items-center justify-between gap-2 p-2">
-                    <a
-                      className="min-w-0 truncate text-sm font-extrabold text-slate-900 hover:text-rose-500"
-                      href={item.url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {item.title}
-                    </a>
+                    <div className="min-w-0">
+                      <a
+                        className="block truncate text-sm font-extrabold text-slate-900 hover:text-rose-500"
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {item.title}
+                      </a>
+                      {item.source === "zenlove" ? (
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-rose-500">
+                          ZenLove
+                        </span>
+                      ) : null}
+                    </div>
                     <div className="flex shrink-0 gap-1">
                       <a
                         className="grid size-8 place-items-center rounded-full bg-rose-50 text-rose-500"
@@ -380,14 +422,16 @@ function AdminTemplates() {
                       >
                         <ExternalLink size={15} />
                       </a>
-                      <button
-                        className="grid size-8 place-items-center rounded-full bg-rose-50 text-rose-500"
-                        type="button"
-                        onClick={() => deleteTemplate(item)}
-                        aria-label="Xóa mẫu"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {item.source !== "zenlove" ? (
+                        <button
+                          className="grid size-8 place-items-center rounded-full bg-rose-50 text-rose-500"
+                          type="button"
+                          onClick={() => deleteTemplate(item)}
+                          aria-label="Xóa mẫu"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 </article>
