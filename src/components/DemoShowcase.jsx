@@ -129,9 +129,13 @@ function DemoShowcase({ activeCategory }) {
                           : "grid grid-cols-2 gap-2"
                       }
                     >
-                      {group.items.map((item) => {
+                      {group.items.map((item, itemIndex) => {
+                        const displayTitle =
+                          activeCategory === "wedding" && cloudWeddingTemplates?.length
+                            ? `Mẫu ${itemIndex + 1}`
+                            : item.title;
                         if (item.image) {
-                          const imageKey = `${group.title}-${item.title}`;
+                          const imageKey = `${group.title}-${displayTitle}`;
                           const isActiveImage = activeImageKey === imageKey;
                           const shouldScrollImage = !isLandscape && Boolean(item.url);
 
@@ -157,7 +161,7 @@ function DemoShowcase({ activeCategory }) {
                                 event.preventDefault();
                                 setPreviewImage({
                                   src: item.image,
-                                  alt: `${group.title} ${item.title}`,
+                                  alt: `${group.title} ${displayTitle}`,
                                 });
                               }}
                               key={imageKey}
@@ -174,12 +178,12 @@ function DemoShowcase({ activeCategory }) {
                                       : `template-preview-image ${isActiveImage ? "is-preview-active" : ""}`
                                   }
                                   src={item.image}
-                                  alt={`${group.title} ${item.title}`}
+                                  alt={`${group.title} ${displayTitle}`}
                                   loading="lazy"
                                   decoding="async"
                                 />
                                 <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-xs font-extrabold text-rose-500 shadow-sm">
-                                  {item.title}
+                                  {displayTitle}
                                 </span>
                                 <div className="pointer-events-none absolute inset-0 hidden bg-slate-950/0 transition duration-300 group-hover:bg-slate-950/10 sm:block" />
                                 <span
@@ -201,9 +205,9 @@ function DemoShowcase({ activeCategory }) {
                               href={item.url}
                               target="_blank"
                               rel="noreferrer"
-                              key={`${group.title}-${item.title}`}
+                              key={`${group.title}-${displayTitle}`}
                             >
-                              <span>{item.title}</span>
+                              <span>{displayTitle}</span>
                               <ExternalLink
                                 className="text-rose-500 transition group-hover:translate-x-0.5"
                                 size={16}
@@ -215,9 +219,9 @@ function DemoShowcase({ activeCategory }) {
                         return (
                           <div
                             className="flex min-h-11 items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2.5 text-sm font-bold text-slate-500 sm:px-4 sm:py-3"
-                            key={`${group.title}-${item.title}`}
+                            key={`${group.title}-${displayTitle}`}
                           >
-                            <span>{item.title}</span>
+                            <span>{displayTitle}</span>
                             <span className="text-xs font-semibold text-slate-400">
                               Chưa gắn mẫu
                             </span>
