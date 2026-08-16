@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FinalCTA from "./components/FinalCTA.jsx";
 import FloatingButtons from "./components/FloatingButtons.jsx";
 import Header from "./components/Header.jsx";
@@ -19,19 +19,31 @@ import AdminShowcase from "./components/AdminShowcase.jsx";
 import MusicPlanner from "./components/MusicPlanner.jsx";
 
 function App() {
-  const isMusicAdmin = window.location.pathname === "/admin/music";
-  const isTemplatesAdmin = window.location.pathname === "/admin/templates";
-  const isAdminDashboard = window.location.pathname === "/admin/dashboard" || window.location.pathname === "/admin";
-  const adminSystemPage = window.location.pathname.split("/")[2];
-  const showcasePage = window.location.pathname.split("/")[2];
+  const [pathname, setPathname] = useState(window.location.pathname);
   const [activeDemoCategory, setActiveDemoCategory] = useState(null);
+  useEffect(() => {
+    const updatePathname = () => setPathname(window.location.pathname);
+    window.addEventListener("popstate", updatePathname);
+    return () => window.removeEventListener("popstate", updatePathname);
+  }, []);
+  const navigateAdmin = (path) => {
+    window.history.pushState({}, "", path);
+    setPathname(path);
+  };
+  const adminRoutes = {
+    "/admin": "dashboard",
+    "/admin/dashboard": "dashboard",
+    "/admin/templates": "templates",
+    "/admin/orders": "orders",
+    "/admin/music": "music",
+    "/admin/backgrounds": "backgrounds",
+    "/admin/slides": "slides",
+    "/admin/settings": "settings",
+    "/admin/users": "users",
+  };
+  const adminView = adminRoutes[pathname];
 
-  if (isMusicAdmin) return <AdminMusic />;
-  if (isTemplatesAdmin) return <AdminTemplates />;
-  if (showcasePage === "backgrounds") return <AdminShowcase type="background" />;
-  if (showcasePage === "slides") return <AdminShowcase type="slide" />;
-  if (["settings", "users", "activity"].includes(adminSystemPage)) return <AdminSystem page={adminSystemPage} />;
-  if (isAdminDashboard) return <AdminDashboard />;
+  if (adminView) return <AdminDashboard activeView={adminView} onNavigate={navigateAdmin} />;
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_46%,#ffffff_100%)] text-slate-950">

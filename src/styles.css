@@ -55,3 +55,116 @@
     top 8s ease,
     transform 8s ease;
 }
+
+/* Cool-blue admin system: quieter surfaces, clearer hierarchy, one action color. */
+.admin-ui,
+main.bg-\[\#fbfafb\] {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(186, 230, 253, 0.52), transparent 28rem),
+    linear-gradient(135deg, #f3f9ff 0%, #edf7ff 48%, #f8fbff 100%) !important;
+  color: #102a43;
+}
+
+.admin-ui .bg-white,
+main.bg-\[\#fbfafb\] .bg-white {
+  background-color: rgba(255, 255, 255, 0.92);
+}
+
+.admin-ui .border-rose-100,
+.admin-ui .border-rose-200,
+.admin-ui .border-rose-300,
+main.bg-\[\#fbfafb\] .border-rose-100,
+main.bg-\[\#fbfafb\] .border-rose-200,
+main.bg-\[\#fbfafb\] .border-rose-300 {
+  border-color: #d7e9f8;
+}
+
+.admin-ui .bg-rose-50,
+.admin-ui .bg-rose-50\/40,
+.admin-ui .bg-rose-50\/50,
+.admin-ui .bg-rose-50\/60,
+.admin-ui .bg-\[\#fffafa\],
+.admin-ui .bg-\[\#fff7f8\],
+.admin-ui .bg-\[\#fff1f3\],
+main.bg-\[\#fbfafb\] .bg-rose-50,
+main.bg-\[\#fbfafb\] .bg-\[\#fffafa\] {
+  background-color: #eef7ff;
+}
+
+.admin-ui .bg-rose-500,
+.admin-ui .bg-\[\#E54153\],
+main.bg-\[\#fbfafb\] .bg-rose-500,
+main.bg-\[\#fbfafb\] .bg-\[\#E54153\] {
+  background-color: #2563eb;
+}
+
+.admin-ui .bg-rose-600,
+.admin-ui .hover\:bg-rose-600:hover,
+.admin-ui .hover\:bg-\[\#c93345\]:hover,
+main.bg-\[\#fbfafb\] .hover\:bg-rose-600:hover {
+  background-color: #1d4ed8;
+}
+
+.admin-ui .text-rose-500,
+.admin-ui .text-rose-600,
+.admin-ui .text-\[\#E54153\],
+.admin-ui .text-\[\#d83d50\],
+.admin-ui .hover\:text-rose-500:hover,
+.admin-ui .hover\:text-\[\#E54153\]:hover,
+main.bg-\[\#fbfafb\] .text-\[\#E54153\],
+main.bg-\[\#fbfafb\] .hover\:text-\[\#E54153\]:hover {
+  color: #2563eb;
+}
+
+.admin-ui input,
+.admin-ui select,
+main.bg-\[\#fbfafb\] input,
+main.bg-\[\#fbfafb\] select {
+  border-color: #c9dfef !important;
+  background-color: #f8fcff !important;
+}
+
+.admin-ui input:focus,
+.admin-ui select:focus,
+main.bg-\[\#fbfafb\] input:focus,
+main.bg-\[\#fbfafb\] select:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.14);
+}
+
+.admin-ui .hover\:border-rose-200:hover,
+.admin-ui .hover\:border-rose-300:hover,
+main.bg-\[\#fbfafb\] .hover\:border-rose-200:hover,
+main.bg-\[\#fbfafb\] .hover\:border-rose-300:hover {
+  border-color: #93c5fd;
+}
+
+.admin-workspace .admin-ui {
+  min-height: auto;
+  background: transparent !important;
+}
+
+.admin-workspace .admin-ui > section > a:first-child {
+  display: none;
+}
+
+.admin-ui button,
+.admin-ui a,
+.admin-ui [role="button"],
+.admin-ui label:has(input[type="file"]) {
+  cursor: pointer;
+}
+
+.admin-ui button:disabled {
+  cursor: not-allowed;
+}
+
+.admin-ui input,
+.admin-ui textarea {
+  cursor: text;
+}
+
+.admin-ui select {
+  cursor: pointer;
+}

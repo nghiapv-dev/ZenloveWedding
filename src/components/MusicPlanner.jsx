@@ -185,7 +185,6 @@ function MusicPlanner() {
       <SectionHeading
         eyebrow="Gợi ý dành cho bạn"
         title="Tạo list nhạc cưới phù hợp"
-        desc="Mô tả không khí buổi tiệc và chọn các nghi thức. Zenlove sẽ gợi ý tên bài hát phù hợp cho từng hạng mục."
       />
 
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">

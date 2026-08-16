@@ -61,7 +61,7 @@ function normalizeTemplate(template, index, syncedAt) {
     zenlove_id: template.id,
     title: template.name || `Mẫu ${index + 1}`,
     slug: template.slug,
-    url: `${ZENLOVE_WEBSITE_URL}/templates/${template.slug}`,
+    url: `${ZENLOVE_WEBSITE_URL}/template-preview/${template.slug}`,
     image_url: `${ZENLOVE_CDN_URL}/${thumbnailKey.replace(/^\//, "")}`,
     thumbnail_key: template.thumbnailKey || null,
     long_thumbnail_key: template.longThumbnailKey || null,

@@ -4,12 +4,27 @@ import { serviceDemoSections } from "../data/siteData.jsx";
 import ImageModal from "./ImageModal.jsx";
 import { isSupabaseConfigured, supabase } from "../lib/supabase.js";
 
+function normalizeZenLovePreviewUrl(url, slug) {
+  if (slug) return `https://zenlove.me/template-preview/${slug}`;
+  if (!url) return url;
+  return url.replace("https://zenlove.me/templates/", "https://zenlove.me/template-preview/");
+}
+
 function DemoShowcase({ activeCategory }) {
   const activeSection = activeCategory ? serviceDemoSections[activeCategory] : null;
   const [previewImage, setPreviewImage] = useState(null);
   const [activeImageKey, setActiveImageKey] = useState(null);
   const [cloudWeddingTemplates, setCloudWeddingTemplates] = useState(null);
   const [cloudShowcases, setCloudShowcases] = useState({ background: [], slide: [] });
+
+  const trackTemplateClick = (category, template) => {
+    if (!isSupabaseConfigured || !["wedding", "video", "background"].includes(category)) return;
+    supabase.from("content_clicks").insert({
+      category,
+      template_key: template.analyticsKey || template.url || template.title,
+      template_name: template.title || "Mẫu chưa đặt tên",
+    }).then(() => {});
+  };
 
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined;
@@ -18,15 +33,16 @@ function DemoShowcase({ activeCategory }) {
     const loadCloudTemplates = async () => {
       const { data, error } = await supabase
         .from("wedding_templates")
-        .select("title, url, image_url, sort_order")
+        .select("id, zenlove_id, slug, title, url, image_url, sort_order")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
 
       if (!error && mounted) {
         setCloudWeddingTemplates((data || []).map((item, index) => ({
           title: item.title || "Mẫu " + (index + 1),
-          url: item.url,
+          url: normalizeZenLovePreviewUrl(item.url, item.slug),
           image: item.image_url,
+          analyticsKey: item.zenlove_id || item.slug || item.id,
         })));
       }
     };
@@ -156,7 +172,10 @@ function DemoShowcase({ activeCategory }) {
                                   return;
                                 }
 
-                                if (item.url) return;
+                                if (item.url) {
+                                  trackTemplateClick(activeCategory, item);
+                                  return;
+                                }
 
                                 event.preventDefault();
                                 setPreviewImage({

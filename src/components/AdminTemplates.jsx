@@ -156,6 +156,9 @@ function AdminTemplates() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [schemaMissing, setSchemaMissing] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const loadTemplates = async () => {
     const { data, error } = await supabase
       .from("wedding_templates")
@@ -233,6 +236,7 @@ function AdminTemplates() {
       setTitle("");
       setUrl("");
       setMessage("Đã thêm mẫu thiệp.");
+      setShowAddForm(false);
       await loadTemplates();
     } catch (error) {
       if (path) await supabase.storage.from(templatesBucket).remove([path]);
@@ -260,6 +264,10 @@ function AdminTemplates() {
       setLoading(false);
     }
   };
+  const filteredTemplates = templates.filter((item) => item.title?.toLowerCase().includes(query.trim().toLowerCase()));
+  const templatesPerPage = 12;
+  const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / templatesPerPage));
+  const visibleTemplates = filteredTemplates.slice((Math.min(page, totalPages) - 1) * templatesPerPage, Math.min(page, totalPages) * templatesPerPage);
   const syncZenLoveTemplates = async () => {
     if (!session?.access_token) return;
     setLoading(true);
@@ -287,7 +295,7 @@ function AdminTemplates() {
   if (!session) return null;
   if (schemaMissing) return <SchemaMissing />;
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff7f8_0%,#ffffff_45%,#fff7f8_100%)] px-4 py-6 text-slate-950 sm:px-6">
+    <main className="admin-ui min-h-screen px-4 py-6 text-slate-950 sm:px-6">
       <section className="mx-auto max-w-6xl">
         <a
           className="mb-5 inline-flex items-center gap-2 text-sm font-extrabold text-slate-600 transition hover:text-[#E54153]"
@@ -310,6 +318,14 @@ function AdminTemplates() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-rose-100 bg-white px-4 text-sm font-bold text-slate-700"
+              type="button"
+              onClick={() => setShowAddForm((current) => !current)}
+            >
+              <Plus size={16} />
+              {showAddForm ? "Đóng form" : "Thêm mẫu"}
+            </button>
+            <button
               className="inline-flex h-10 items-center gap-2 rounded-full bg-rose-500 px-4 text-sm font-bold text-white disabled:opacity-60"
               type="button"
               disabled={loading}
@@ -328,9 +344,9 @@ function AdminTemplates() {
             </button>
           </div>
         </header>
-        <div className="grid gap-4 lg:grid-cols-[370px_1fr]">
+        <div className={`grid gap-4 ${showAddForm ? "lg:grid-cols-[370px_1fr]" : ""}`}>
           <form
-            className="h-fit rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_12px_32px_rgba(229,65,83,0.08)]"
+            className={`h-fit rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_12px_32px_rgba(229,65,83,0.08)] ${showAddForm ? "" : "hidden"}`}
             onSubmit={addTemplate}
           >
             <h2 className="text-lg font-extrabold">Thêm mẫu mới</h2>
@@ -384,9 +400,19 @@ function AdminTemplates() {
             </button>
           </form>
           <section className="rounded-3xl border border-rose-100 bg-white p-4 shadow-[0_12px_32px_rgba(229,65,83,0.08)]">
-            <h2 className="mb-4 text-lg font-extrabold">Danh sách mẫu</h2>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-extrabold">Danh sách mẫu</h2>
+              <label className="relative">
+                <input
+                  className="h-10 w-48 rounded-xl border border-rose-100 bg-rose-50/50 px-3 text-sm outline-none sm:w-56"
+                  placeholder="Tìm kiếm mẫu..."
+                  value={query}
+                  onChange={(event) => { setQuery(event.target.value); setPage(1); }}
+                />
+              </label>
+            </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {templates.map((item) => (
+              {visibleTemplates.map((item) => (
                 <article
                   className="overflow-hidden rounded-2xl border border-rose-100"
                   key={item.id}
@@ -437,9 +463,16 @@ function AdminTemplates() {
                 </article>
               ))}
             </div>
-            {!templates.length ? (
+            {filteredTemplates.length > templatesPerPage ? (
+              <div className="mt-5 flex items-center justify-center gap-2">
+                <button className="h-9 rounded-lg border border-rose-100 px-3 text-sm font-bold disabled:opacity-40" disabled={page <= 1} onClick={() => setPage((current) => current - 1)} type="button">←</button>
+                <span className="text-sm font-bold text-slate-500">{Math.min(page, totalPages)} / {totalPages}</span>
+                <button className="h-9 rounded-lg border border-rose-100 px-3 text-sm font-bold disabled:opacity-40" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)} type="button">→</button>
+              </div>
+            ) : null}
+            {!filteredTemplates.length ? (
               <div className="rounded-2xl bg-rose-50 p-8 text-center text-sm font-bold text-slate-500">
-                Chưa có mẫu cloud. Các mẫu hiện có trên web vẫn được giữ nguyên.
+                {query ? "Không tìm thấy mẫu phù hợp." : "Chưa có mẫu cloud. Các mẫu hiện có trên web vẫn được giữ nguyên."}
               </div>
             ) : null}
           </section>

@@ -55,7 +55,6 @@ function Process() {
       <SectionHeading
         eyebrow="Quy trình đặt"
         title="Chỉ cần vài bước là có sản phẩm cưới để gửi khách"
-        desc="Quy trình gọn, dễ làm trên điện thoại. Bạn chỉ cần chọn mẫu và gửi thông tin, phần còn lại Zenlove wedding xử lý."
       />
 
       <div className="mx-auto max-w-6xl">

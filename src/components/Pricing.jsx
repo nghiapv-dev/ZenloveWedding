@@ -9,7 +9,6 @@ function Pricing() {
       <SectionHeading
         eyebrow="Bảng giá"
         title="Chọn gói phù hợp với nhu cầu của bạn"
-        desc="Các gói rõ ràng, dễ so sánh và dễ đặt nhanh qua Zalo."
       />
 
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 lg:grid-cols-3">

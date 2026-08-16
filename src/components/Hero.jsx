@@ -1,8 +1,10 @@
 import { Heart, MessageCircle } from "lucide-react";
 import { stats } from "../data/siteData.jsx";
 import { pillButton } from "../constants/styles.js";
+import { useSiteContent } from "../lib/siteContent.js";
 
 function Hero() {
+  const content = useSiteContent({ contact: { heroTitle: "Thiệp cưới Online & Dịch vụ cưới hiện đại", heroDescription: "" } });
   return (
     <section className="relative overflow-hidden bg-[linear-gradient(180deg,#fff7f8_0%,#ffffff_72%)] px-4 py-7 sm:px-6 sm:py-10 lg:px-12 lg:py-12">
       <div className="pointer-events-none absolute -left-24 top-4 h-64 w-64 rounded-full bg-rose-200/40 blur-3xl" />
@@ -15,7 +17,7 @@ function Hero() {
           </p>
 
           <h1 className="max-w-3xl text-2xl font-extrabold leading-[1.15] tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
-            Thiệp cưới Online & Dịch vụ cưới hiện đại
+            {content.contact?.heroTitle || "Thiệp cưới Online & Dịch vụ cưới hiện đại"}
           </h1>
 
           <div className="mt-5 grid gap-2 min-[420px]:grid-cols-2 sm:flex sm:flex-wrap sm:gap-3">
