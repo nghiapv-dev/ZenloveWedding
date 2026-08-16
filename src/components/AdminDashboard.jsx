@@ -336,7 +336,9 @@ function AdminDashboard() {
               </span>
               <div>
                 <p className="text-sm font-medium text-slate-500">Thiệp cưới</p>
-                <p className="mt-1 text-2xl font-extrabold">{builtInTemplateCount + templateCount}</p>
+                <p className="mt-1 text-2xl font-extrabold">
+                  {templateCount || builtInTemplateCount}
+                </p>
                 <p className="text-xs text-slate-400">Mẫu đang hiển thị</p>
               </div>
             </div>

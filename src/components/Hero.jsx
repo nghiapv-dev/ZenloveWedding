@@ -18,11 +18,6 @@ function Hero() {
             Thiệp cưới Online & Dịch vụ cưới hiện đại
           </h1>
 
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-            Tạo thiệp cưới online, album nhạc, slide cưới, background LED và logo cô dâu chú rể.
-            Xem mẫu nhanh, chọn gói dễ dàng và đặt qua Zalo chỉ trong vài phút.
-          </p>
-
           <div className="mt-5 grid gap-2 min-[420px]:grid-cols-2 sm:flex sm:flex-wrap sm:gap-3">
             <a
               className={`${pillButton} w-full bg-rose-500 text-white shadow-lg shadow-rose-200/80 hover:bg-rose-600 sm:w-auto`}

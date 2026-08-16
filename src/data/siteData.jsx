@@ -241,7 +241,7 @@ export const serviceDemoSections = {
   wedding: {
     eyebrow: "Kho mẫu thiệp",
     title: "Thiệp cưới Online",
-    subtitle: "Có 35 mẫu thiệp. Bấm vào ảnh để xem trực tiếp mẫu thiệp.",
+    subtitle: "",
     groups: weddingTemplateGroups,
   },
   album: {
