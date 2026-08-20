@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Image, Star } from "lucide-react";
-import { feedbacks } from "../data/siteData.jsx";
-import { sectionClass } from "../constants/styles.js";
-import ImageModal from "./ImageModal.jsx";
-import SectionHeading from "./SectionHeading.jsx";
+import { feedbacks } from "../../data/siteData.jsx";
+import { sectionClass } from "../../constants/styles.js";
+import ImageModal from "../shared/ImageModal.jsx";
+import SectionHeading from "../shared/SectionHeading.jsx";
 
 function Feedback() {
   const [previewImage, setPreviewImage] = useState(null);

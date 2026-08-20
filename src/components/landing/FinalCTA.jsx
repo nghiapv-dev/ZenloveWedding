@@ -1,5 +1,5 @@
 import { MessageCircle } from "lucide-react";
-import { pillButton } from "../constants/styles.js";
+import { pillButton } from "../../constants/styles.js";
 
 function FinalCTA() {
   return (

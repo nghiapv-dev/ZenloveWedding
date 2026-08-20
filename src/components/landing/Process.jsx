@@ -7,8 +7,8 @@ import {
   Send,
   Sparkles,
 } from "lucide-react";
-import { sectionClass } from "../constants/styles.js";
-import SectionHeading from "./SectionHeading.jsx";
+import { sectionClass } from "../../constants/styles.js";
+import SectionHeading from "../shared/SectionHeading.jsx";
 
 const processItems = [
   {

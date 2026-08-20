@@ -1,5 +1,4 @@
 import {
-  BadgeCheck,
   CalendarHeart,
   Clock3,
   Crown,
@@ -10,7 +9,6 @@ import {
   Phone,
   ShieldCheck,
   Sparkles,
-  Star,
   Video,
 } from "lucide-react";
 
@@ -54,187 +52,10 @@ export const services = [
   },
 ];
 
-export const weddingTemplateGroups = [
-  {
-    title: "Thiệp cưới Online",
-    items: [
-      {
-        title: "Mẫu 1",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-68-pre",
-        image: "/wedding-templates/Hinh1.webp",
-      },
-      {
-        title: "Mẫu 2",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-50-pre",
-        image: "/wedding-templates/Hinh2.webp",
-      },
-      {
-        title: "Mẫu 3",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-39-pre",
-        image: "/wedding-templates/Hinh3.webp",
-      },
-      {
-        title: "Mẫu 4",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-222-pre",
-        image: "/wedding-templates/Hinh4.webp",
-      },
-      {
-        title: "Mẫu 5",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-38-pre",
-        image: "/wedding-templates/Hinh5.webp",
-      },
-      {
-        title: "Mẫu 6",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-32-pre",
-        image: "/wedding-templates/Hinh6.webp",
-      },
-      {
-        title: "Mẫu 7",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-70-basic",
-        image: "/wedding-templates/Hinh7.webp",
-      },
-      {
-        title: "Mẫu 8",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-56-pre",
-        image: "/wedding-templates/Hinh8.webp",
-      },
-      {
-        title: "Mẫu 9",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-04-2025",
-        image: "/wedding-templates/Hinh9.webp",
-      },
-      {
-        title: "Mẫu 10",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-do-07-pre",
-        image: "/wedding-templates/Hinh10.webp",
-      },
-      {
-        title: "Mẫu 11",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-25-pre",
-        image: "/wedding-templates/Hinh11.webp",
-      },
-      {
-        title: "Mẫu 12",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-55-pre",
-        image: "/wedding-templates/Hinh12.webp",
-      },
-      {
-        title: "Mẫu 13",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-121-pre",
-        image: "/wedding-templates/Hinh13.jpg",
-      },
-      {
-        title: "Mẫu 14",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-120-pre",
-        image: "/wedding-templates/Hinh14.webp",
-      },
-      {
-        title: "Mẫu 15",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-15-pre",
-        image: "/wedding-templates/Hinh15.webp",
-      },
-      {
-        title: "Mẫu 16",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-09-pre",
-        image: "/wedding-templates/Hinh16.webp",
-      },
-      {
-        title: "Mẫu 17",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-21-pre",
-        image: "/wedding-templates/Hinh17.webp",
-      },
-      {
-        title: "Mẫu 18",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-72-pre",
-        image: "/wedding-templates/Hinh18.webp",
-      },
-      {
-        title: "Mẫu 19",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-11-pre",
-        image: "/wedding-templates/Hinh19.webp",
-      },
-      {
-        title: "Mẫu 20",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-54-pre",
-        image: "/wedding-templates/Hinh20.webp",
-      },
-      {
-        title: "Mẫu 21",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-103-premium",
-        image: "/wedding-templates/Hinh21.webp",
-      },
-      {
-        title: "Mẫu 22",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-3",
-        image: "/wedding-templates/Hinh22.png",
-      },
-      {
-        title: "Mẫu 23",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-11-pre",
-        image: "/wedding-templates/Hinh23.webp",
-      },
-      {
-        title: "Mẫu 24",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-35-pre",
-        image: "/wedding-templates/Hinh24.webp",
-      },
-      {
-        title: "Mẫu 25",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-26-pre",
-        image: "/wedding-templates/Hinh25.webp",
-      },
-      {
-        title: "Mẫu 26",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-18-pre",
-        image: "/wedding-templates/Hinh26.webp",
-      },
-      {
-        title: "Mẫu 27",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-82-new",
-        image: "/wedding-templates/Hinh27.jpg",
-      },
-      {
-        title: "Mẫu 28",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-xanh-trend-19-pre",
-        image: "/wedding-templates/Hinh28.webp",
-      },
-      {
-        title: "Mẫu 29",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-59-pre",
-        image: "/wedding-templates/Hinh29.webp",
-      },
-      {
-        title: "Mẫu 30",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-221-pre",
-        image: "/wedding-templates/Hinh30.webp",
-      },
-      {
-        title: "Mẫu 31",
-        url: "https://zenlove.me/template-preview/template-06",
-        image: "/wedding-templates/Hinh31.png",
-      },
-      {
-        title: "Mẫu 32",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-06-pre",
-        image: "/wedding-templates/Hinh32.webp",
-      },
-      {
-        title: "Mẫu 33",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-63-pre",
-        image: "/wedding-templates/Hinh33.webp",
-      },
-      {
-        title: "Mẫu 34",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-100-basic",
-        image: "/wedding-templates/Hinh34.webp",
-      },
-      {
-        title: "Mẫu 35",
-        url: "https://zenlove.me/template-preview/thiep-cuoi-93-basic",
-        image: "/wedding-templates/Hinh35.webp",
-      },
-    ],
-  },
+export const heroWeddingSlides = [
+  { image: "/wedding-templates/Hinh1.webp" },
+  { image: "/wedding-templates/Hinh2.webp" },
+  { image: "/wedding-templates/Hinh3.webp" },
 ];
 
 export const serviceDemoSections = {
@@ -242,7 +63,7 @@ export const serviceDemoSections = {
     eyebrow: "Kho mẫu thiệp",
     title: "Thiệp cưới Online",
     subtitle: "",
-    groups: weddingTemplateGroups,
+    groups: [{ title: "Thiệp cưới ZenLove", items: [] }],
   },
   album: {
     eyebrow: "Kho album nhạc",
@@ -385,7 +206,7 @@ export const packages = [
   {
   name: "Combo Slide & Thiệp",
   price: "250K",
-  fit: "Dành cho cặp đôi muốn sở hữu thiệp cưới online và video slide cưới với mức chi phí tiết kiệm.",
+  fit: "Được thiết kế cho cặp đôi muốn sở hữu thiệp cưới online và video slide cưới với mức chi phí tiết kiệm.",
   features: [
     "01 Thiệp cưới Online",
     "01 Video Slide cưới",
@@ -426,7 +247,7 @@ export const packages = [
 {
   name: "Slide Cưới Custom",
   price: "Từ 300K",
-  fit: "Dành cho cặp đôi muốn sở hữu video slide cưới được thiết kế độc quyền theo phong cách riêng.",
+  fit: "Được thiết kế cho cặp đôi muốn sở hữu video slide cưới được thiết kế độc quyền theo phong cách riêng.",
   features: [
     "Không giới hạn số lượng ảnh",
     "Thiết kế riêng theo yêu cầu",
@@ -439,7 +260,7 @@ export const packages = [
 export const whyItems = [
   ["Thiết kế độc quyền", Palette],
   ["Giao nhanh từ 2-4h", Clock3],
-  ["Hỗ trợ tận tình", MessageCircle],
+  ["Hỗ trợ tận tay", MessageCircle],
   ["Chỉnh sửa miễn phí", Heart],
   ["Xem trên mọi thiết bị", Phone],
   ["Bảo mật thông tin", ShieldCheck],
@@ -460,28 +281,21 @@ export const feedbacks = [
 
 export const faqs = [
   [
-    "Bao lâu có thiệp?",
-    "Thông thường có bản demo trong 24h sau khi nhận đủ nội dung và ảnh.",
+    "Bao lâu để hoàn thành thiệp?",
+    "Thường thường là bản demo trong 24h sau khi nhận đủ nội dung và ảnh.",
   ],
   [
     "Có sửa không?",
-    "Có. Mỗi gói đều có số lần chỉnh sửa, gói Premium hỗ trợ chỉnh nhiều hơn.",
+    "Có. Mỗi gói đều có số lần chỉnh sửa, gói Premium hỗ trợ chỉnh nhiều hơn."
   ],
   [
     "Có làm gấp không?",
-    "Có thể làm gấp tùy thời điểm. Bạn nên nhắn Zalo để kiểm tra lịch trước.",
+    "Có thể làm gấp tức thời. Bạn nên nhắn Zalo để kiểm tra lịch trước.",
   ],
   [
     "Thanh toán sao?",
-    "Có thể cọc trước, kiểm tra demo rồi thanh toán phần còn lại khi bàn giao.",
+    "Có thể cọc trước, kiểm tra demo rồi thanh toán phần còn lại khi bản giao.",
   ],
-];
-
-export const stats = [
-  ["100+", "Khách hàng", Star],
-  ["300+", "Thiết kế", Palette],
-  ["1-2h", "Hoàn thành từ", Clock3],
-  ["4.9/5", "Đánh giá", BadgeCheck],
 ];
 
 export const processSteps = [
@@ -493,3 +307,4 @@ export const processSteps = [
   "Nhận sản phẩm",
   "Thanh toán",
 ];
+

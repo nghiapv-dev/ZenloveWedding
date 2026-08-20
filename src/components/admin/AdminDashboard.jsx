@@ -9,19 +9,14 @@ import {
   Users,
   CalendarHeart,
   ClipboardList,
-  LayoutDashboard,
   Lock,
-  LogOut,
   Music,
   Plus,
   Sparkles,
   Video,
 } from "lucide-react";
-import { isSupabaseConfigured, supabase } from "../lib/supabase.js";
-import {
-  serviceDemoSections,
-  weddingTemplateGroups,
-} from "../data/siteData.jsx";
+import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
+import { serviceDemoSections } from "../../data/siteData.jsx";
 import AdminTemplates from "./AdminTemplates.jsx";
 import AdminMusic from "./AdminMusic.jsx";
 import AdminShowcase from "./AdminShowcase.jsx";
@@ -130,16 +125,13 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
     month: "2-digit",
     year: "numeric",
   }).format(new Date());
-  const builtInTemplateCount = weddingTemplateGroups.flatMap(
-    (group) => group.items,
-  ).length;
   const builtInBackgroundCount = serviceDemoSections.background.groups.flatMap(
     (group) => group.items,
   ).length;
   const builtInSlideCount = serviceDemoSections.video.groups.flatMap(
     (group) => group.items,
   ).length;
-  const templateLibraryCount = templateCount || builtInTemplateCount;
+  const templateLibraryCount = templateCount;
   const backgroundLibraryCount = builtInBackgroundCount + backgroundCount;
   const slideLibraryCount = builtInSlideCount + slideCount;
   const clickComparison = [
@@ -335,7 +327,7 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
     backgrounds: <AdminShowcase type="background" />,
     slides: <AdminShowcase type="slide" />,
     settings: <AdminContentManager />,
-    users: <AdminSystem page="users" />,
+    users: <AdminSystem />,
   }[activeView];
 
   return (

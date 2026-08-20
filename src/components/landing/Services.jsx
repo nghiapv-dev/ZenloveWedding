@@ -1,6 +1,6 @@
 import { ChevronRight } from "lucide-react";
-import { services } from "../data/siteData.jsx";
-import { sectionClass } from "../constants/styles.js";
+import { services } from "../../data/siteData.jsx";
+import { sectionClass } from "../../constants/styles.js";
 
 const demoCategories = ["wedding", "album", "video", "background"];
 

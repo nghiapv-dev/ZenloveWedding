@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
-import { packages } from "../data/siteData.jsx";
-import { pillButton, sectionClass } from "../constants/styles.js";
-import SectionHeading from "./SectionHeading.jsx";
+import { packages } from "../../data/siteData.jsx";
+import { pillButton, sectionClass } from "../../constants/styles.js";
+import SectionHeading from "../shared/SectionHeading.jsx";
 
 function Pricing() {
   return (

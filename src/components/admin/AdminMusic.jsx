@@ -16,7 +16,7 @@ import {
   isSupabaseConfigured,
   musicBucket,
   supabase,
-} from "../lib/supabase.js";
+} from "../../lib/supabase.js";
 
 const songsPerPage = 20;
 

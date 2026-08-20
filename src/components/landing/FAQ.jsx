@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { faqs } from "../data/siteData.jsx";
-import { sectionClass } from "../constants/styles.js";
-import SectionHeading from "./SectionHeading.jsx";
+import { faqs } from "../../data/siteData.jsx";
+import { sectionClass } from "../../constants/styles.js";
+import SectionHeading from "../shared/SectionHeading.jsx";
 
 function FAQ() {
   const [openIndex, setOpenIndex] = useState(null);

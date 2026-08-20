@@ -1,22 +1,18 @@
 import { useEffect, useState } from "react";
-import FinalCTA from "./components/FinalCTA.jsx";
-import FloatingButtons from "./components/FloatingButtons.jsx";
-import Header from "./components/Header.jsx";
-import Hero from "./components/Hero.jsx";
-import Services from "./components/Services.jsx";
-import DemoShowcase from "./components/DemoShowcase.jsx";
-import Pricing from "./components/Pricing.jsx";
-import WhyChoose from "./components/WhyChoose.jsx";
-import Process from "./components/Process.jsx";
-import Feedback from "./components/Feedback.jsx";
-import FAQ from "./components/FAQ.jsx";
-import OrderContact from "./components/OrderContact.jsx";
-import AdminMusic from "./components/AdminMusic.jsx";
-import AdminTemplates from "./components/AdminTemplates.jsx";
-import AdminDashboard from "./components/AdminDashboard.jsx";
-import AdminSystem from "./components/AdminSystem.jsx";
-import AdminShowcase from "./components/AdminShowcase.jsx";
-import MusicPlanner from "./components/MusicPlanner.jsx";
+import FinalCTA from "./components/landing/FinalCTA.jsx";
+import FloatingButtons from "./components/landing/FloatingButtons.jsx";
+import Header from "./components/landing/Header.jsx";
+import Hero from "./components/landing/Hero.jsx";
+import Services from "./components/landing/Services.jsx";
+import DemoShowcase from "./components/landing/DemoShowcase.jsx";
+import Pricing from "./components/landing/Pricing.jsx";
+import WhyChoose from "./components/landing/WhyChoose.jsx";
+import Process from "./components/landing/Process.jsx";
+import Feedback from "./components/landing/Feedback.jsx";
+import FAQ from "./components/landing/FAQ.jsx";
+import OrderContact from "./components/landing/OrderContact.jsx";
+import AdminDashboard from "./components/admin/AdminDashboard.jsx";
+import MusicPlanner from "./components/landing/MusicPlanner.jsx";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);

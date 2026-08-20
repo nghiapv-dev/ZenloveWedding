@@ -1,6 +1,6 @@
-import { whyItems } from "../data/siteData.jsx";
-import { cardClass, sectionClass } from "../constants/styles.js";
-import SectionHeading from "./SectionHeading.jsx";
+import { whyItems } from "../../data/siteData.jsx";
+import { cardClass, sectionClass } from "../../constants/styles.js";
+import SectionHeading from "../shared/SectionHeading.jsx";
 
 function WhyChoose() {
   return (

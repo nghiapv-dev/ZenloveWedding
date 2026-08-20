@@ -9,8 +9,8 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { isSupabaseConfigured, supabase } from "../lib/supabase.js";
-import { serviceDemoSections } from "../data/siteData.jsx";
+import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
+import { serviceDemoSections } from "../../data/siteData.jsx";
 
 const bucket = "wedding-showcase";
 const safeName = (name) =>

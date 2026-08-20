@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, Save, Settings } from "lucide-react";
-import { isSupabaseConfigured, supabase } from "../lib/supabase.js";
-import { packages, faqs, feedbacks } from "../data/siteData.jsx";
+import { ArrowLeft, Save, Settings } from "lucide-react";
+import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
+import { packages, faqs, feedbacks } from "../../data/siteData.jsx";
 
 const defaults = {
   contact: { heroTitle: "Thiệp cưới Online & Dịch vụ cưới hiện đại", heroDescription: "", hotline: "0335652868", zalo: "0335652868" },

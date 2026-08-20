@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ClipboardList, Plus } from "lucide-react";
-import { supabase } from "../lib/supabase.js";
+import { supabase } from "../../lib/supabase.js";
 
 const labels = { new: "Mới nhận", working: "Đang làm", review: "Chờ khách duyệt", completed: "Hoàn thành" };
 const empty = { bride_name: "", groom_name: "", wedding_date: "", package_name: "", template_name: "", zalo_link: "", note: "" };

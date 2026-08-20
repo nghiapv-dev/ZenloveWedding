@@ -1,6 +1,6 @@
 import { MessageCircle, Phone, Video } from "lucide-react";
-import { cardClass, sectionClass } from "../constants/styles.js";
-import SectionHeading from "./SectionHeading.jsx";
+import { cardClass, sectionClass } from "../../constants/styles.js";
+import SectionHeading from "../shared/SectionHeading.jsx";
 
 const contactItems = [
   {

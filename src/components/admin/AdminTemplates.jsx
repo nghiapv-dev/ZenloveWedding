@@ -15,7 +15,7 @@ import {
   isSupabaseConfigured,
   supabase,
   templatesBucket,
-} from "../lib/supabase.js";
+} from "../../lib/supabase.js";
 
 function safeFileName(name) {
   return name

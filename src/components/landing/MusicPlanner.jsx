@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, ChevronUp, ClipboardList, Music, Plus, RotateCcw, Sparkles, Trash2 } from "lucide-react";
-import { isSupabaseConfigured, supabase } from "../lib/supabase.js";
-import { cardClass, sectionClass } from "../constants/styles.js";
-import SectionHeading from "./SectionHeading.jsx";
+import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
+import { cardClass, sectionClass } from "../../constants/styles.js";
+import SectionHeading from "../shared/SectionHeading.jsx";
 
 const ceremonySections = [
   { id: "welcome", label: "Nhạc đón khách", category: "Nhạc đón khách" },

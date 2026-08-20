@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { ExternalLink, Link2 } from "lucide-react";
-import { serviceDemoSections } from "../data/siteData.jsx";
-import ImageModal from "./ImageModal.jsx";
-import { isSupabaseConfigured, supabase } from "../lib/supabase.js";
+import { serviceDemoSections } from "../../data/siteData.jsx";
+import ImageModal from "../shared/ImageModal.jsx";
+import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
 
 function normalizeZenLovePreviewUrl(url, slug) {
   if (slug) return `https://zenlove.me/template-preview/${slug}`;
@@ -67,8 +67,8 @@ function DemoShowcase({ activeCategory }) {
 
   const currentShowcaseType = activeCategory === "video" ? "slide" : activeCategory === "background" ? "background" : null;
   const currentCloudShowcases = currentShowcaseType ? cloudShowcases[currentShowcaseType] : [];
-  const displayedSection = activeCategory === "wedding" && cloudWeddingTemplates?.length
-    ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: cloudWeddingTemplates }] }
+  const displayedSection = activeCategory === "wedding"
+    ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: cloudWeddingTemplates || [] }] }
     : currentCloudShowcases.length
       ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: [...activeSection.groups[0].items, ...currentCloudShowcases] }] }
       : activeSection;

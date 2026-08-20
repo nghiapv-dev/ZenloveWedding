@@ -149,6 +149,202 @@ main.bg-\[\#fbfafb\] .hover\:border-rose-300:hover {
   display: none;
 }
 
+/* Public landing hero */
+.hero-redesign {
+  overflow: hidden;
+  padding: 82px 24px 72px;
+  background:
+    radial-gradient(circle at 84% 45%, rgba(255, 218, 222, 0.55), transparent 28%),
+    linear-gradient(120deg, #fff9fa 0%, #fff 48%, #fff8f9 100%);
+}
+
+.hero-redesign__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(430px, 0.88fr);
+  align-items: center;
+  gap: 64px;
+  width: min(1152px, 100%);
+  margin: 0 auto;
+}
+
+.hero-redesign__copy {
+  max-width: 730px;
+}
+
+.hero-redesign__eyebrow {
+  display: inline-flex;
+  margin: 0;
+  padding: 7px 16px;
+  border: 1px solid #ffcbd2;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #d42344;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  box-shadow: 0 4px 12px rgba(229, 65, 83, 0.06);
+}
+
+.hero-redesign__title {
+  margin: 22px 0 0;
+  color: #201b1e;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(35px, 3vw, 50px);
+  font-weight: 800;
+  letter-spacing: -0.065em;
+  line-height: 1.04;
+}
+
+.hero-redesign__title span {
+  color: #d42344;
+}
+
+.hero-redesign__description {
+  max-width: 690px;
+  margin: 27px 0 0;
+  color: #475569;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.hero-redesign__benefits,
+.hero-redesign__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.hero-redesign__benefits {
+  margin-top: 27px;
+}
+
+.hero-redesign__benefits span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 17px;
+  border: 1px solid #ffd6dc;
+  border-radius: 999px;
+  background: #fff;
+  color: #3b4658;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 3px 10px rgba(229, 65, 83, 0.05);
+}
+
+.hero-redesign__benefits svg {
+  color: #d42344;
+}
+
+.hero-redesign__actions {
+  margin-top: 36px;
+}
+
+.hero-redesign__primary,
+.hero-redesign__secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 54px;
+  padding: 0 25px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.hero-redesign__primary {
+  background: #d42344;
+  color: #fff;
+  box-shadow: 0 14px 24px rgba(233, 29, 68, 0.2);
+}
+
+.hero-redesign__secondary {
+  border: 1px solid #ffccd4;
+  background: #fff;
+  color: #17233b;
+}
+
+.hero-redesign__primary:hover,
+.hero-redesign__secondary:hover {
+  transform: translateY(-2px);
+}
+
+.hero-redesign__primary:hover { background: #d8143b; }
+.hero-redesign__secondary:hover { box-shadow: 0 10px 18px rgba(229, 65, 83, 0.1); }
+
+.hero-deck {
+  position: relative;
+  height: 500px;
+  min-width: 430px;
+}
+
+.hero-deck__card {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  border: 9px solid #fff;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 24px 50px rgba(67, 34, 38, 0.18);
+}
+
+.hero-deck__card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.hero-deck__card--left,
+.hero-deck__card--right {
+  top: 70px;
+  width: 250px;
+  height: 360px;
+  transition: opacity 500ms ease, transform 650ms ease;
+}
+
+.hero-deck__card--left {
+  left: 0;
+  transform: rotate(-11deg);
+}
+
+.hero-deck__card--right {
+  right: 0;
+  transform: rotate(11deg);
+}
+
+.hero-deck__card--front {
+  z-index: 2;
+  top: 0;
+  left: 50%;
+  width: 310px;
+  height: 455px;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 980px) {
+  .hero-redesign { padding: 54px 24px; }
+  .hero-redesign__inner { grid-template-columns: 1fr; gap: 42px; }
+  .hero-redesign__copy { margin: 0 auto; }
+  .hero-deck { margin: 0 auto; }
+}
+
+@media (max-width: 540px) {
+  .hero-redesign { padding: 44px 18px 34px; }
+  .hero-redesign__eyebrow { font-size: 12px; padding: 6px 11px; }
+  .hero-redesign__title { margin-top: 16px; font-size: 42px; letter-spacing: -0.06em; }
+  .hero-redesign__description { margin-top: 18px; font-size: 16px; }
+  .hero-redesign__benefits { gap: 8px; margin-top: 20px; }
+  .hero-redesign__benefits span { padding: 8px 11px; font-size: 13px; }
+  .hero-redesign__actions { margin-top: 26px; gap: 10px; }
+  .hero-redesign__primary, .hero-redesign__secondary { min-height: 48px; padding: 0 17px; font-size: 14px; }
+  .hero-deck { height: 370px; min-width: 0; transform: scale(0.78); transform-origin: top center; margin-bottom: -80px; }
+}
+
 .admin-ui button,
 .admin-ui a,
 .admin-ui [role="button"],
