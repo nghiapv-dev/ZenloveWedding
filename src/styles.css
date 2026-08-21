@@ -364,3 +364,19 @@ main.bg-\[\#fbfafb\] .hover\:border-rose-300:hover {
 .admin-ui select {
   cursor: pointer;
 }
+
+/* Do not let dense order-table cells break individual words. */
+.admin-ui > section > section.mt-4.overflow-x-auto table td:nth-child(2) p,
+.admin-ui > section > section.mt-4.overflow-x-auto table td:nth-child(4) span,
+.admin-ui > section > section.mt-4.overflow-x-auto table td:nth-child(8) span {
+  white-space: nowrap;
+}
+
+.admin-ui > section > section.mt-4.overflow-x-auto table td:nth-child(2) p {
+  display: block;
+  overflow: visible;
+  font-size: 13px;
+  line-height: 1.35;
+  text-overflow: clip;
+  white-space: normal;
+}

@@ -16,6 +16,12 @@ import {
   Video,
 } from "lucide-react";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
+import {
+  clearAdminSession,
+  isAdminSessionExpired,
+  remainingAdminSessionMs,
+  startAdminSession,
+} from "../../lib/adminSession.js";
 import { serviceDemoSections } from "../../data/siteData.jsx";
 import AdminTemplates from "./AdminTemplates.jsx";
 import AdminMusic from "./AdminMusic.jsx";
@@ -199,12 +205,60 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
 
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined;
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+
+    const restoreSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) return setSession(null);
+
+      if (isAdminSessionExpired()) {
+        clearAdminSession();
+        await supabase.auth.signOut();
+        return setSession(null);
+      }
+
+      setSession(data.session);
+    };
+
+    restoreSession();
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, currentSession) => setSession(currentSession),
+      async (event, currentSession) => {
+        if (!currentSession) {
+          clearAdminSession();
+          return setSession(null);
+        }
+
+        if (event === "SIGNED_IN") startAdminSession();
+        if (isAdminSessionExpired()) {
+          clearAdminSession();
+          await supabase.auth.signOut();
+          return setSession(null);
+        }
+
+        setSession(currentSession);
+      },
     );
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!session) return undefined;
+
+    const logoutWhenExpired = async () => {
+      clearAdminSession();
+      await supabase.auth.signOut();
+      setSession(null);
+    };
+    const timeout = window.setTimeout(logoutWhenExpired, remainingAdminSessionMs());
+    const checkWhenReturning = () => {
+      if (document.visibilityState === "visible" && isAdminSessionExpired()) logoutWhenExpired();
+    };
+
+    document.addEventListener("visibilitychange", checkWhenReturning);
+    return () => {
+      window.clearTimeout(timeout);
+      document.removeEventListener("visibilitychange", checkWhenReturning);
+    };
+  }, [session]);
 
   useEffect(() => {
     if (!session) return;
@@ -313,7 +367,7 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
     loadCounts();
   }, [session, rangeDays]);
   if (!isSupabaseConfigured) return <SetupNotice />;
-  if (!session) return <Login onLogin={setSession} />;
+  if (!session) return <Login onLogin={(nextSession) => { startAdminSession(); setSession(nextSession); }} />;
   const handleSidebarNavigation = (event) => {
     const link = event.target.closest("a[href^='/admin']");
     if (!link || !onNavigate) return;
