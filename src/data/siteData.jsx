@@ -92,73 +92,7 @@ export const serviceDemoSections = {
     groups: [
       {
         title: "Slide cưới",
-        items: [
-          {
-            title: "Mẫu 1",
-            image: "/wedding-slidecuoi/Slidecuoi_mau1.png",
-            url: "https://drive.google.com/file/d/1uxUm8fBSCXvP-SjhdbREObEiSdm0zbii/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 2",
-            image: "/wedding-slidecuoi/Slidecuoi_mau2.png",
-            url: "https://drive.google.com/file/d/1GkuQvEg4bWAw-T9CGjcYmM8iivPPwXR4/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 3",
-            image: "/wedding-slidecuoi/Slidecuoi_mau3.png",
-            url: "https://drive.google.com/file/d/1kcY-wP-gz3XBDgrQAJxtB-C0imszYFK0/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 4",
-            image: "/wedding-slidecuoi/Slidecuoi_mau4.png",
-            url: "https://drive.google.com/file/d/1AFVHWbwlgtXh78ogjWH71FJtx3LqdObO/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 5",
-            image: "/wedding-slidecuoi/Slidecuoi_mau5.png",
-            url: "https://drive.google.com/file/d/1098bbDGshAj8FjqTwQyntwgBMkI_Q8av/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 6",
-            image: "/wedding-slidecuoi/Slidecuoi_mau6.png",
-            url: "https://drive.google.com/file/d/1ymYsJaIP6e6zXEX_kd74O4m-rtrcUNHf/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 7",
-            image: "/wedding-slidecuoi/Slidecuoi_mau7.png",
-            url: "https://drive.google.com/file/d/1M7v7wf4jpPH0vNDmqdWj8xq7SY_hnF5s/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 8",
-            image: "/wedding-slidecuoi/Slidecuoi_mau8.png",
-            url: "https://drive.google.com/file/d/1yrc0gZrAS_YwF5ccQacWgyCU4p0WuL_m/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 9",
-            image: "/wedding-slidecuoi/Slidecuoi_mau9.png",
-            url: "https://drive.google.com/file/d/1FGGx8xZ8CzuVQvyUqQ1yo9iHjnq2w-O9/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 10",
-            image: "/wedding-slidecuoi/Slidecuoi_mau10.png",
-            url: "https://drive.google.com/file/d/1_9DdE2xrBVTLgvg_W9ymUmCpTAE8QBal/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 11",
-            image: "/wedding-slidecuoi/Slidecuoi_mau11.png",
-            url: "https://drive.google.com/file/d/1-dihUqMm8X6QrO_ch2qjQS5xA0ZALoRi/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 12",
-            image: "/wedding-slidecuoi/Slidecuoi_mau12.png",
-            url: "https://drive.google.com/file/d/1ZdaJQhVhUkmuhnuehYJ_jirIwdb7bZ_m/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 13",
-            image: "/wedding-slidecuoi/Slidecuoi_mau13.png",
-            url: "https://drive.google.com/file/d/1QQ5XU2ZGaFpP6eegicmgrnHVsXg71HNk/view?usp=drive_link",
-          },
-        ],
+        items: [],
       },
     ],
   },

@@ -10,7 +10,6 @@ import {
   X,
 } from "lucide-react";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
-import { serviceDemoSections } from "../../data/siteData.jsx";
 
 const bucket = "wedding-showcase";
 const safeName = (name) =>
@@ -30,9 +29,7 @@ function AdminShowcase({ type }) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
-  const builtIn = (isSlide ? serviceDemoSections.video.groups : [])
-    .flatMap((group) => group.items)
-    .map((item) => ({ ...item, source: "website" }));
+  const builtIn = [];
   const displayedItems = [
     ...builtIn,
     ...items.map((item) => ({ ...item, source: "cloud" })),

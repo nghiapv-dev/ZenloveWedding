@@ -36,6 +36,7 @@ import AdminContentManager from "./AdminContentManager.jsx";
 import AdminOrders from "./AdminOrders.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
 import AdminLogin from "./AdminLogin.jsx";
+import AdminReviews from "./AdminReviews.jsx";
 
 const orderStatusLabels = {
   new: "Mới nhận",
@@ -513,6 +514,7 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
     slides: <AdminShowcase type="slide" />,
     settings: <AdminContentManager />,
     users: <AdminSystem />,
+    reviews: <AdminReviews />,
   }[activeView];
 
   return (

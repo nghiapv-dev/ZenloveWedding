@@ -145,6 +145,14 @@ main.bg-\[\#fbfafb\] .hover\:border-rose-300:hover {
   background: transparent !important;
 }
 
+#feedback button[type="submit"] {
+  cursor: pointer;
+}
+
+#feedback button[type="submit"]:disabled {
+  cursor: not-allowed;
+}
+
 .admin-workspace .admin-ui > section > a:first-child {
   display: none;
 }

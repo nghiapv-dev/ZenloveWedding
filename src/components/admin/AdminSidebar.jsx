@@ -6,6 +6,7 @@ import {
   Music,
   Settings,
   Sparkles,
+  Star,
   Users,
   Video,
   X,
@@ -26,6 +27,7 @@ const contentLinks = [
 ];
 
 const systemLinks = [
+  ["/admin/reviews", "Đánh giá khách hàng", "reviews", Star],
   ["/admin/settings", "Cài đặt", "settings", Settings],
   ["/admin/users", "Người dùng", "users", Users],
 ];

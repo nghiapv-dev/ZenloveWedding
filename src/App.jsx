@@ -41,6 +41,7 @@ function App() {
     "/admin/slides": "slides",
     "/admin/settings": "settings",
     "/admin/users": "users",
+    "/admin/reviews": "reviews",
   };
   const adminView = adminRoutes[pathname];
 
