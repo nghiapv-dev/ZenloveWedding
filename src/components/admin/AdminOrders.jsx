@@ -107,24 +107,6 @@ function Field({ children, label, required = false }) {
   );
 }
 
-function ServicePill({ serviceId }) {
-  const service = services.find((item) => item.id === serviceId);
-  const tones = {
-    wedding: "bg-blue-50 text-blue-600",
-    slide: "bg-violet-50 text-violet-600",
-    background: "bg-amber-50 text-amber-600",
-    music: "bg-rose-50 text-rose-600",
-  };
-
-  return (
-    <span
-      className={`whitespace-nowrap rounded-lg px-2 py-1 text-xs font-bold ${tones[serviceId] || "bg-slate-100 text-slate-600"}`}
-    >
-      {service?.label || serviceId}
-    </span>
-  );
-}
-
 function AdminOrders({ scope = "customer" }) {
   const [orders, setOrders] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -224,6 +206,17 @@ function AdminOrders({ scope = "customer" }) {
           .map((service) => service.label)
           .join(" · ")
       : order.package_name || "Chưa chọn dịch vụ";
+  };
+  const serviceTemplateDetails = (order) => {
+    const templates = {
+      wedding: order.wedding_template_name,
+      slide: order.slide_template_name,
+      background: order.background_template_name,
+    };
+    return serviceIds(order).map((serviceId) => ({
+      service: services.find((service) => service.id === serviceId),
+      template: templates[serviceId],
+    }));
   };
   const formatMoney = (value) =>
     `${Number(value || 0).toLocaleString("vi-VN")}đ`;
@@ -360,9 +353,9 @@ function AdminOrders({ scope = "customer" }) {
       );
     if (
       form.expected_delivery_date &&
-      form.expected_delivery_date < form.wedding_date
+      form.expected_delivery_date > form.wedding_date
     )
-      return setMessage("Ngày bàn giao dự kiến không được trước ngày cưới.");
+      return setMessage("Ngày bàn giao dự kiến phải cùng ngày hoặc trước ngày cưới.");
     const serviceNamesForForm = services
       .filter((service) => form.selected_services.includes(service.id))
       .map((service) => service.label);
@@ -789,7 +782,7 @@ function AdminOrders({ scope = "customer" }) {
                 <Field label="Ngày bàn giao dự kiến">
                   <input
                     className={inputClass}
-                    min={form.wedding_date || undefined}
+                    max={form.wedding_date || undefined}
                     type="date"
                     value={form.expected_delivery_date}
                     onChange={(event) =>
@@ -930,7 +923,7 @@ function AdminOrders({ scope = "customer" }) {
 
         <section className="mt-4 overflow-x-auto overflow-y-visible rounded-3xl border border-blue-100 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
           <table
-            className={`w-full table-fixed text-left ${scope === "completed" ? "min-w-[980px]" : "min-w-[1380px]"}`}
+            className={`w-full table-fixed text-left ${scope === "completed" ? "min-w-[980px]" : "min-w-[1510px]"}`}
           >
             <thead className="border-b border-slate-100 bg-slate-50/70 text-xs uppercase tracking-wide text-slate-500">
               {scope === "completed" ? (
@@ -948,12 +941,12 @@ function AdminOrders({ scope = "customer" }) {
                   <th className="w-[5%] px-5 py-4">STT</th>
                   <th className="w-[17%] px-5 py-4">Tên cô dâu & chú rể</th>
                   <th className="w-[10%] px-5 py-4">Ngày cưới</th>
-                  <th className="w-[12%] px-5 py-4">Loại dịch vụ</th>
+                  <th className="w-[24%] px-5 py-4">Loại dịch vụ</th>
                   <th className="w-[10%] px-5 py-4">Ngày bàn giao</th>
-                  <th className="w-[8%] px-5 py-4 text-right">Tiền cọc</th>
+                  <th className="w-[7%] px-5 py-4 text-right">Tiền cọc</th>
                   <th className="w-[8%] px-5 py-4 text-right">Tổng tiền</th>
-                  <th className="w-[11%] px-5 py-4">Trạng thái</th>
-                  <th className="w-[14%] px-5 py-4">Ghi chú</th>
+                  <th className="w-[10%] px-5 py-4">Trạng thái</th>
+                  <th className="w-[12%] px-5 py-4">Ghi chú</th>
                   <th className="w-[5%] px-5 py-4 text-center">Thao tác</th>
                 </tr>
               )}
@@ -1035,18 +1028,21 @@ function AdminOrders({ scope = "customer" }) {
                       <td className="whitespace-nowrap px-5 py-5 text-sm font-medium text-slate-700">
                         {formatDate(order.wedding_date)}
                       </td>
-                      <td className="px-5 py-5">
-                        <div className="flex flex-wrap gap-1.5">
-                          {serviceIds(order).length ? (
-                            serviceIds(order).map((id) => (
-                              <ServicePill key={id} serviceId={id} />
-                            ))
-                          ) : (
-                            <span className="text-sm text-slate-500">
-                              {serviceNames(order)}
-                            </span>
-                          )}
-                        </div>
+                      <td className="px-5 py-5 text-sm leading-6 text-slate-700">
+                        {serviceTemplateDetails(order).length ? (
+                          <div className="space-y-1">
+                            {serviceTemplateDetails(order).map(({ service, template }) => (
+                              <p key={service?.id}>
+                                <span className={`font-extrabold ${service?.tone === "violet" ? "text-violet-600" : service?.tone === "amber" ? "text-amber-700" : service?.tone === "blue" ? "text-blue-600" : "text-rose-600"}`}>
+                                  {service?.label || "Dịch vụ"}:
+                                </span>{" "}
+                                <span className="font-semibold text-slate-700">
+                                  {template || (service?.id === "music" ? "Đã chọn" : "Chưa chọn mẫu")}
+                                </span>
+                              </p>
+                            ))}
+                          </div>
+                        ) : <span className="text-slate-400">{serviceNames(order)}</span>}
                       </td>
                       <td className="whitespace-nowrap px-5 py-5 text-sm font-medium text-slate-700">
                         {formatDate(order.expected_delivery_date)}
