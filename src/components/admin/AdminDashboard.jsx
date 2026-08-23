@@ -178,14 +178,15 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
   })();
   const orderSummary = dashboardOrders.reduce(
     (summary, order) => {
+      const totalAmount = Number(order.total_amount || 0);
+      const paidAmount = order.payment_status === "paid"
+        ? totalAmount
+        : Number(order.deposit_amount || 0);
       summary.total += 1;
       summary[order.status || "new"] += 1;
-      summary.receivable += Math.max(
-        Number(order.total_amount || 0) - Number(order.deposit_amount || 0),
-        0,
-      );
-      summary.totalAmount += Number(order.total_amount || 0);
-      summary.depositAmount += Number(order.deposit_amount || 0);
+      summary.receivable += Math.max(totalAmount - paidAmount, 0);
+      summary.totalAmount += totalAmount;
+      summary.depositAmount += paidAmount;
       return summary;
     },
     { total: 0, new: 0, working: 0, review: 0, completed: 0, receivable: 0, totalAmount: 0, depositAmount: 0 },
@@ -376,7 +377,7 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
       const { data, error } = await supabase
         .from("customer_orders")
         .select(
-          "id, bride_name, groom_name, selected_services, package_name, wedding_date, expected_delivery_date, total_amount, deposit_amount, status, order_source, partner_name, created_at",
+          "id, bride_name, groom_name, selected_services, package_name, wedding_date, expected_delivery_date, total_amount, deposit_amount, payment_status, status, order_source, partner_name, created_at",
         )
         .order("created_at", { ascending: false });
       if (!error) setDashboardOrders(data || []);
@@ -545,7 +546,7 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
                     { label: "Chờ khách duyệt", value: orderSummary.review, icon: Clock3, tone: "bg-violet-50 text-violet-600", note: "Đang chờ phản hồi" },
                     { label: "Đã hoàn thành", value: orderSummary.completed, icon: CircleCheckBig, tone: "bg-emerald-50 text-emerald-600", note: "Đơn đã xử lý xong" },
                   ].map((item) => { const Icon = item.icon; return <article className="min-h-36 rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.04)]" key={item.label}><div className="flex items-start gap-3"><span className={`grid size-10 shrink-0 place-items-center rounded-xl ${item.tone}`}><Icon size={20} /></span><div><p className="text-[11px] font-bold text-slate-500">{item.label}</p><strong className="mt-1 block text-2xl font-extrabold tracking-tight text-slate-800">{item.value}</strong></div></div><p className="mt-4 flex items-center gap-1 text-[11px] font-bold text-emerald-600"><TrendingUp size={13} />{item.note}</p></article>; })}
-                  <article className="min-h-36 rounded-2xl border border-rose-100 bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.04)]"><div className="flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-500"><WalletCards size={20} /></span><div><p className="text-[11px] font-bold text-slate-500">Còn phải thu</p><strong className="mt-1 block text-xl font-extrabold tracking-tight text-slate-800">{orderSummary.receivable.toLocaleString("vi-VN")}đ</strong></div></div><div className="mt-3 space-y-1 text-[11px] font-bold"><p className="flex justify-between text-slate-500"><span>Tổng tiền đơn</span><span>{orderSummary.totalAmount.toLocaleString("vi-VN")}đ</span></p><p className="flex justify-between text-slate-500"><span>Đã đặt cọc</span><span>{orderSummary.depositAmount.toLocaleString("vi-VN")}đ</span></p><p className="flex justify-between border-t border-rose-100 pt-1 text-rose-500"><span>Còn phải thu</span><span>{orderSummary.receivable.toLocaleString("vi-VN")}đ</span></p></div></article>
+                  <article className="min-h-36 rounded-2xl border border-rose-100 bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.04)]"><div className="flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-500"><WalletCards size={20} /></span><div><p className="text-[11px] font-bold text-slate-500">Còn phải thu</p><strong className="mt-1 block text-xl font-extrabold tracking-tight text-slate-800">{orderSummary.receivable.toLocaleString("vi-VN")}đ</strong></div></div><div className="mt-3 space-y-1 text-[11px] font-bold"><p className="flex justify-between text-slate-500"><span>Tổng tiền đơn</span><span>{orderSummary.totalAmount.toLocaleString("vi-VN")}đ</span></p><p className="flex justify-between text-slate-500"><span>Đã thu</span><span>{orderSummary.depositAmount.toLocaleString("vi-VN")}đ</span></p><p className="flex justify-between border-t border-rose-100 pt-1 text-rose-500"><span>Còn phải thu</span><span>{orderSummary.receivable.toLocaleString("vi-VN")}đ</span></p></div></article>
                 </div>
               </section>
 
