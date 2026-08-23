@@ -170,33 +170,7 @@ export const serviceDemoSections = {
     groups: [
       {
         title: "Background màn sao băng",
-        items: [
-          {
-            title: "Mẫu 1",
-            image: "/wedding-background-cuoi/Background_mau1.png",
-            url: "https://drive.google.com/file/d/1cgrflDUtJPwFyjNb5KcZ0wiVSixJ0gLH/view?usp=sharing",
-          },
-          {
-            title: "Mẫu 2",
-            image: "/wedding-background-cuoi/Background_mau2.png",
-            url: "https://drive.google.com/file/d/18woFJuYHSszhsNF6SYkOWbqzFChwFSBn/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 3",
-            image: "/wedding-background-cuoi/Background_mau3.png",
-            url: "https://drive.google.com/file/d/1EwYYSu75B33qm650TP3xnX0K0uqVlDUz/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 4",
-            image: "/wedding-background-cuoi/Background_mau4.png",
-            url: "https://drive.google.com/file/d/1Uu_pD6lVXMnKzIiBUjhjEQ4I7IUwBIzN/view?usp=drive_link",
-          },
-          {
-            title: "Mẫu 5",
-            image: "/wedding-background-cuoi/Background_mau5.png",
-            url: "https://drive.google.com/file/d/19G-whe29r3J1bzyu_PTUqU85lmLlfun6/view?usp=drive_link",
-          },
-        ],
+        items: [],
       },
     ],
   },
@@ -307,4 +281,3 @@ export const processSteps = [
   "Nhận sản phẩm",
   "Thanh toán",
 ];
-

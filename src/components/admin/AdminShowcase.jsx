@@ -30,9 +30,7 @@ function AdminShowcase({ type }) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
-  const builtIn = (
-    isSlide ? serviceDemoSections.video : serviceDemoSections.background
-  ).groups
+  const builtIn = (isSlide ? serviceDemoSections.video.groups : [])
     .flatMap((group) => group.items)
     .map((item) => ({ ...item, source: "website" }));
   const displayedItems = [
@@ -176,10 +174,10 @@ function AdminShowcase({ type }) {
                 />
               </label>
               <label className="mt-4 block text-sm font-bold">
-                Link demo
+                Link demo YouTube
                 <input
                   className="mt-2 h-11 w-full rounded-xl border border-rose-100 bg-[#fffafa] px-3 text-sm outline-none"
-                  placeholder="https://drive.google.com/..."
+                  placeholder="https://youtube.com/watch?v=..."
                   type="url"
                   value={url}
                   onChange={(event) => setUrl(event.target.value)}

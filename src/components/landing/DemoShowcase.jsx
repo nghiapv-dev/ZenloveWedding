@@ -69,6 +69,8 @@ function DemoShowcase({ activeCategory }) {
   const currentCloudShowcases = currentShowcaseType ? cloudShowcases[currentShowcaseType] : [];
   const displayedSection = activeCategory === "wedding"
     ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: cloudWeddingTemplates || [] }] }
+    : activeCategory === "background"
+      ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: currentCloudShowcases }] }
     : currentCloudShowcases.length
       ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: [...activeSection.groups[0].items, ...currentCloudShowcases] }] }
       : activeSection;
