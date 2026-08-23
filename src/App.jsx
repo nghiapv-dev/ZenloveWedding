@@ -23,14 +23,19 @@ function App() {
     return () => window.removeEventListener("popstate", updatePathname);
   }, []);
   const navigateAdmin = (path) => {
-    window.history.pushState({}, "", path);
-    setPathname(path);
+    const target = new URL(path, window.location.origin);
+    window.history.pushState({}, "", `${target.pathname}${target.search}`);
+    setPathname(target.pathname);
   };
   const adminRoutes = {
     "/admin": "dashboard",
     "/admin/dashboard": "dashboard",
     "/admin/templates": "templates",
-    "/admin/orders": "orders",
+    "/admin/orders": "orders-all",
+    "/admin/orders/customer": "orders-customer",
+    "/admin/orders/studio": "orders-studio",
+    "/admin/orders/collaborator": "orders-collaborator",
+    "/admin/orders/completed": "orders-completed",
     "/admin/music": "music",
     "/admin/backgrounds": "backgrounds",
     "/admin/slides": "slides",

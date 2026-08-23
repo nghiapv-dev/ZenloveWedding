@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   Check,
+  ChevronDown,
   ClipboardList,
   Eye,
   Image,
@@ -28,6 +29,23 @@ const statusStyles = {
   working: "bg-amber-50 text-amber-600",
   review: "bg-violet-50 text-violet-600",
   completed: "bg-emerald-50 text-emerald-600",
+};
+const orderSources = {
+  customer: "Khách hàng",
+  studio: "Studio",
+  collaborator: "CTV",
+};
+const sourceStyles = {
+  customer: "bg-blue-50 text-blue-600",
+  studio: "bg-violet-50 text-violet-600",
+  collaborator: "bg-amber-50 text-amber-600",
+};
+const scopeTitles = {
+  all: "Quản lý đơn hàng",
+  customer: "Đơn khách hàng",
+  studio: "Đơn Studio",
+  collaborator: "Đơn CTV",
+  completed: "Đơn đã hoàn thành",
 };
 const services = [
   {
@@ -60,6 +78,10 @@ const services = [
   },
 ];
 const emptyForm = {
+  order_source: "customer",
+  partner_name: "",
+  studio_id: "",
+  collaborator_id: "",
   bride_name: "",
   groom_name: "",
   wedding_date: "",
@@ -94,22 +116,39 @@ function ServicePill({ serviceId }) {
     music: "bg-rose-50 text-rose-600",
   };
 
-  return <span className={`whitespace-nowrap rounded-lg px-2 py-1 text-xs font-bold ${tones[serviceId] || "bg-slate-100 text-slate-600"}`}>{service?.label || serviceId}</span>;
+  return (
+    <span
+      className={`whitespace-nowrap rounded-lg px-2 py-1 text-xs font-bold ${tones[serviceId] || "bg-slate-100 text-slate-600"}`}
+    >
+      {service?.label || serviceId}
+    </span>
+  );
 }
 
-function AdminOrders() {
+function AdminOrders({ scope = "customer" }) {
   const [orders, setOrders] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
   const [viewingOrder, setViewingOrder] = useState(null);
   const [activeMenu, setActiveMenu] = useState(null);
+  const [activeStatusMenu, setActiveStatusMenu] = useState(null);
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
+  const [partners, setPartners] = useState([]);
+  const [showPartnerForm, setShowPartnerForm] = useState(false);
+  const [newPartnerName, setNewPartnerName] = useState("");
+  const [editingPartner, setEditingPartner] = useState(null);
+  const [partnerDeleteCandidate, setPartnerDeleteCandidate] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [filters, setFilters] = useState({
     query: "",
     service: "all",
     status: "all",
+    partnerId: "all",
   });
+  const taskFilter =
+    new URLSearchParams(window.location.search).get("task") || "all";
 
   const inputClass =
     "h-11 w-full rounded-xl border border-blue-100 bg-white px-3 text-sm font-medium outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
@@ -129,6 +168,41 @@ function AdminOrders() {
   useEffect(() => {
     loadOrders();
   }, []);
+
+  useEffect(() => {
+    const requestedOrderId = new URLSearchParams(window.location.search).get(
+      "order",
+    );
+    if (!requestedOrderId) return;
+    const requestedOrder = orders.find(
+      (order) => order.id === requestedOrderId,
+    );
+    if (requestedOrder) setViewingOrder(requestedOrder);
+  }, [orders]);
+
+  const partnerConfig =
+    scope === "studio"
+      ? { table: "order_studios", label: "Studio", idKey: "studio_id" }
+      : scope === "collaborator"
+        ? {
+            table: "order_collaborators",
+            label: "CTV",
+            idKey: "collaborator_id",
+          }
+        : null;
+  const loadPartners = async () => {
+    if (!partnerConfig) return setPartners([]);
+    const { data, error } = await supabase
+      .from(partnerConfig.table)
+      .select("id, name")
+      .eq("is_active", true)
+      .order("name");
+    if (error) setMessage(error.message);
+    else setPartners(data || []);
+  };
+  useEffect(() => {
+    loadPartners();
+  }, [scope]);
 
   const updateForm = (key, value) =>
     setForm((current) => ({ ...current, [key]: value }));
@@ -163,9 +237,15 @@ function AdminOrders() {
 
   const openCreate = () => {
     setEditingOrder(null);
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      order_source:
+        scope === "completed" || scope === "all" ? "customer" : scope,
+      status: scope === "completed" ? "completed" : "new",
+    });
     setShowForm(true);
     setActiveMenu(null);
+    setActiveStatusMenu(null);
   };
   const openEdit = (order) => {
     setEditingOrder(order);
@@ -179,12 +259,88 @@ function AdminOrders() {
     });
     setShowForm(true);
     setActiveMenu(null);
+    setActiveStatusMenu(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const closeForm = () => {
     setShowForm(false);
     setEditingOrder(null);
     setForm(emptyForm);
+  };
+
+  const createPartner = async (event) => {
+    event.preventDefault();
+    if (!partnerConfig || !newPartnerName.trim()) return;
+    const name = newPartnerName.trim();
+    const request = editingPartner
+      ? supabase
+          .from(partnerConfig.table)
+          .update({ name })
+          .eq("id", editingPartner.id)
+          .select("id, name")
+          .single()
+      : supabase
+          .from(partnerConfig.table)
+          .insert({ name })
+          .select("id, name")
+          .single();
+    const { data, error } = await request;
+    if (error) return setMessage(error.message);
+    setPartners((current) =>
+      (editingPartner
+        ? current.map((partner) => (partner.id === data.id ? data : partner))
+        : [...current, data]
+      ).sort((a, b) => a.name.localeCompare(b.name, "vi")),
+    );
+    if (!editingPartner) {
+      updateForm(partnerConfig.idKey, data.id);
+      updateForm("partner_name", data.name);
+    } else if (form[partnerConfig.idKey] === data.id) {
+      updateForm("partner_name", data.name);
+    }
+    setNewPartnerName("");
+    setShowPartnerForm(false);
+    setEditingPartner(null);
+  };
+
+  const editPartner = (partner) => {
+    setEditingPartner(partner);
+    setNewPartnerName(partner.name);
+    setShowPartnerForm(true);
+  };
+
+  const partnerHasOrders = (partnerId) =>
+    Boolean(
+      partnerConfig &&
+      orders.some((order) => order[partnerConfig.idKey] === partnerId),
+    );
+
+  const deletePartner = async () => {
+    if (!partnerConfig || !partnerDeleteCandidate) return;
+    const hasAssignedOrders = partnerHasOrders(partnerDeleteCandidate.id);
+    const { error } = hasAssignedOrders
+      ? await supabase
+          .from(partnerConfig.table)
+          .update({ is_active: false })
+          .eq("id", partnerDeleteCandidate.id)
+      : await supabase
+          .from(partnerConfig.table)
+          .delete()
+          .eq("id", partnerDeleteCandidate.id);
+    if (error) return setMessage(error.message);
+    setPartners((current) =>
+      current.filter((partner) => partner.id !== partnerDeleteCandidate.id),
+    );
+    if (form[partnerConfig.idKey] === partnerDeleteCandidate.id) {
+      updateForm(partnerConfig.idKey, "");
+      updateForm("partner_name", "");
+    }
+    setPartnerDeleteCandidate(null);
+    setSuccessMessage(
+      hasAssignedOrders
+        ? `Đã ngừng hợp tác với ${partnerConfig.label} thành công.`
+        : `Đã xóa ${partnerConfig.label} thành công.`,
+    );
   };
 
   const saveOrder = async (event) => {
@@ -198,11 +354,24 @@ function AdminOrders() {
       return setMessage(
         "Hãy nhập tên cô dâu, chú rể, ngày cưới và chọn ít nhất một dịch vụ.",
       );
+    if (form.order_source !== "customer" && !form.partner_name.trim())
+      return setMessage(
+        `Hãy nhập ${form.order_source === "studio" ? "tên Studio" : "tên CTV phụ trách"}.`,
+      );
+    if (
+      form.expected_delivery_date &&
+      form.expected_delivery_date < form.wedding_date
+    )
+      return setMessage("Ngày bàn giao dự kiến không được trước ngày cưới.");
     const serviceNamesForForm = services
       .filter((service) => form.selected_services.includes(service.id))
       .map((service) => service.label);
     const payload = {
       ...form,
+      studio_id: form.studio_id || null,
+      collaborator_id: form.collaborator_id || null,
+      partner_name: form.partner_name || null,
+      expected_delivery_date: form.expected_delivery_date || null,
       package_name: serviceNamesForForm.join(", "),
       template_name:
         form.wedding_template_name ||
@@ -226,22 +395,52 @@ function AdminOrders() {
       return setMessage(
         `${result.error.message}. Hãy chạy migration chi tiết đơn hàng trong Supabase.`,
       );
+    const savedMessage = editingOrder
+      ? "Đã cập nhật đơn hàng thành công."
+      : "Đã tạo đơn hàng thành công.";
     closeForm();
     setMessage("");
     await loadOrders();
+    setSuccessMessage(savedMessage);
   };
-  const deleteOrder = async (order) => {
+
+  const updateStatus = async (id, status) => {
+    const { error } = await supabase
+      .from("customer_orders")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (error) return setMessage(error.message);
+    setMessage("");
+    await loadOrders();
+  };
+
+  const updatePaymentStatus = async (id, payment_status) => {
+    const { error } = await supabase
+      .from("customer_orders")
+      .update({ payment_status, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) return setMessage(error.message);
+    setMessage("");
+    await loadOrders();
+  };
+
+  const requestDelete = (order) => {
     setActiveMenu(null);
-    if (
-      !window.confirm(`Xóa đơn của ${order.bride_name} & ${order.groom_name}?`)
-    )
-      return;
+    setDeleteCandidate(order);
+  };
+  const deleteOrder = async () => {
+    if (!deleteCandidate) return;
     const { error } = await supabase
       .from("customer_orders")
       .delete()
-      .eq("id", order.id);
+      .eq("id", deleteCandidate.id);
     if (error) setMessage(error.message);
-    else loadOrders();
+    else {
+      setDeleteCandidate(null);
+      await loadOrders();
+      setSuccessMessage("Đã xóa đơn hàng thành công.");
+    }
   };
 
   const visibleOrders = useMemo(
@@ -254,10 +453,38 @@ function AdminOrders() {
           (!filters.query ||
             searchText.includes(filters.query.toLowerCase())) &&
           (filters.service === "all" || ids.includes(filters.service)) &&
-          (filters.status === "all" || order.status === filters.status)
+          (filters.status === "all" || order.status === filters.status) &&
+          (filters.partnerId === "all" ||
+            (partnerConfig &&
+              order[partnerConfig.idKey] === filters.partnerId)) &&
+          (scope === "completed"
+            ? order.status === "completed"
+            : scope === "all"
+              ? order.status !== "completed" &&
+                (() => {
+                  const today = new Date().toLocaleDateString("en-CA", {
+                    timeZone: "Asia/Ho_Chi_Minh",
+                  });
+                  const deadline = order.expected_delivery_date;
+                  if (taskFilter === "review") return order.status === "review";
+                  if (taskFilter === "new") return order.status === "new";
+                  if (!deadline) return taskFilter === "all";
+                  if (taskFilter === "overdue") return deadline < today;
+                  if (taskFilter === "today") return deadline === today;
+                  if (taskFilter === "soon") {
+                    const threeDays = new Date(`${today}T00:00:00`);
+                    threeDays.setDate(threeDays.getDate() + 3);
+                    return (
+                      deadline >= today &&
+                      deadline <= threeDays.toLocaleDateString("en-CA")
+                    );
+                  }
+                  return true;
+                })()
+              : (order.order_source || "customer") === scope)
         );
       }),
-    [orders, filters],
+    [orders, filters, scope, partnerConfig, taskFilter],
   );
 
   return (
@@ -269,24 +496,111 @@ function AdminOrders() {
               <ClipboardList size={24} />
             </span>
             <div>
-              <h1 className="text-2xl font-extrabold">
-                Quản lý đơn khách hàng
-              </h1>
+              <h1 className="text-2xl font-extrabold">{scopeTitles[scope]}</h1>
               <p className="mt-1 text-sm text-slate-500">
-                Quản lý tất cả đơn hàng thiệp cưới, slide cưới, màn sao băng và
-                nhạc cưới.
+                {scope === "completed"
+                  ? "Các đơn đã hoàn tất xử lý."
+                  : scope === "all"
+                    ? "Danh sách các đơn đang cần xử lý theo bộ lọc từ Dashboard."
+                    : "Quản lý các đơn thiệp cưới, slide cưới, màn sao băng và nhạc cưới."}
               </p>
             </div>
           </div>
-          <button
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-extrabold text-white shadow-sm transition hover:bg-blue-700"
-            onClick={showForm ? closeForm : openCreate}
-            type="button"
-          >
-            <Plus size={17} />
-            {showForm ? "Đóng form" : "Tạo đơn mới"}
-          </button>
+          {scope !== "completed" && scope !== "all" ? (
+            <button
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-extrabold text-white shadow-sm transition hover:bg-blue-700"
+              onClick={showForm ? closeForm : openCreate}
+              type="button"
+            >
+              <Plus size={17} />
+              {showForm ? "Đóng form" : "Tạo đơn mới"}
+            </button>
+          ) : null}
         </header>
+
+        {partnerConfig ? (
+          <section className="mt-5 rounded-2xl border border-violet-100 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-extrabold">
+                  Danh sách {partnerConfig.label}
+                </p>
+              </div>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 text-sm font-extrabold text-violet-700"
+                onClick={() => {
+                  setEditingPartner(null);
+                  setNewPartnerName("");
+                  setShowPartnerForm((current) => !current);
+                }}
+                type="button"
+              >
+                <Plus size={16} />
+                Thêm {partnerConfig.label}
+              </button>
+            </div>
+            {showPartnerForm ? (
+              <form
+                className="mt-4 flex flex-col gap-3 sm:flex-row"
+                onSubmit={createPartner}
+              >
+                <input
+                  className={inputClass}
+                  placeholder={`Tên ${partnerConfig.label}`}
+                  value={newPartnerName}
+                  onChange={(event) => setNewPartnerName(event.target.value)}
+                />
+                <button
+                  className="h-11 rounded-xl bg-violet-600 px-5 text-sm font-extrabold text-white"
+                  type="submit"
+                >
+                  {editingPartner ? "Lưu tên" : "Lưu"}
+                </button>
+              </form>
+            ) : null}
+            {partners.length ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {partners.map((partner) => (
+                  <div
+                    className="inline-flex items-center gap-1 rounded-lg bg-violet-50 py-1 pl-3 pr-1 text-sm font-bold text-violet-700"
+                    key={partner.id}
+                  >
+                    <span>{partner.name}</span>
+                    <button
+                      aria-label={`Sửa ${partner.name}`}
+                      className="grid size-7 place-items-center rounded-md hover:bg-violet-100"
+                      onClick={() => editPartner(partner)}
+                      type="button"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      aria-label={
+                        partnerHasOrders(partner.id)
+                          ? `Ngừng hợp tác với ${partner.name}`
+                          : `Xóa ${partner.name}`
+                      }
+                      className={`grid size-7 place-items-center rounded-md hover:bg-rose-100 ${partnerHasOrders(partner.id) ? "text-amber-600" : "text-rose-600"}`}
+                      onClick={() => setPartnerDeleteCandidate(partner)}
+                      title={
+                        partnerHasOrders(partner.id)
+                          ? "Ngừng hợp tác"
+                          : "Xóa vĩnh viễn"
+                      }
+                      type="button"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-slate-500">
+                Chưa có {partnerConfig.label}.
+              </p>
+            )}
+          </section>
+        ) : null}
 
         {showForm ? (
           <form
@@ -309,6 +623,42 @@ function AdminOrders() {
               ) : null}
             </div>
             <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Nguồn đơn">
+                <input
+                  className={`${inputClass} cursor-default bg-slate-50`}
+                  readOnly
+                  value={scopeTitles[scope]}
+                />
+              </Field>
+              {partnerConfig ? (
+                <Field
+                  label={
+                    form.order_source === "studio"
+                      ? "Tên Studio"
+                      : "Tên CTV phụ trách"
+                  }
+                  required
+                >
+                  <select
+                    className={inputClass}
+                    value={form[partnerConfig.idKey]}
+                    onChange={(event) => {
+                      const partner = partners.find(
+                        (item) => item.id === event.target.value,
+                      );
+                      updateForm(partnerConfig.idKey, event.target.value);
+                      updateForm("partner_name", partner?.name || "");
+                    }}
+                  >
+                    <option value="">Chọn {partnerConfig.label}</option>
+                    {partners.map((partner) => (
+                      <option key={partner.id} value={partner.id}>
+                        {partner.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              ) : null}
               <Field label="Tên cô dâu" required>
                 <input
                   className={inputClass}
@@ -439,6 +789,7 @@ function AdminOrders() {
                 <Field label="Ngày bàn giao dự kiến">
                   <input
                     className={inputClass}
+                    min={form.wedding_date || undefined}
                     type="date"
                     value={form.expected_delivery_date}
                     onChange={(event) =>
@@ -513,7 +864,9 @@ function AdminOrders() {
         ) : null}
 
         <section className="mt-5 rounded-2xl border border-blue-100 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
-          <div className="grid gap-3 md:grid-cols-3">
+          <div
+            className={`grid gap-3 ${partnerConfig ? "md:grid-cols-2 xl:grid-cols-4" : "md:grid-cols-3"}`}
+          >
             <label className="relative">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -556,121 +909,240 @@ function AdminOrders() {
                 </option>
               ))}
             </select>
+            {partnerConfig ? (
+              <select
+                className={inputClass}
+                value={filters.partnerId}
+                onChange={(event) =>
+                  setFilters({ ...filters, partnerId: event.target.value })
+                }
+              >
+                <option value="all">Tất cả {partnerConfig.label}</option>
+                {partners.map((partner) => (
+                  <option key={partner.id} value={partner.id}>
+                    {partner.name}
+                  </option>
+                ))}
+              </select>
+            ) : null}
           </div>
         </section>
 
         <section className="mt-4 overflow-x-auto overflow-y-visible rounded-3xl border border-blue-100 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
-          <table className="w-full min-w-[1380px] table-fixed text-left">
+          <table
+            className={`w-full table-fixed text-left ${scope === "completed" ? "min-w-[980px]" : "min-w-[1380px]"}`}
+          >
             <thead className="border-b border-slate-100 bg-slate-50/70 text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="w-[5%] px-5 py-4">STT</th>
-                <th className="w-[17%] px-5 py-4">Tên cô dâu & chú rể</th>
-                <th className="w-[10%] px-5 py-4">Ngày cưới</th>
-                <th className="w-[12%] px-5 py-4">Loại dịch vụ</th>
-                <th className="w-[10%] px-5 py-4">Ngày bàn giao</th>
-                <th className="w-[8%] px-5 py-4 text-right">Tiền cọc</th>
-                <th className="w-[8%] px-5 py-4 text-right">Tổng tiền</th>
-                <th className="w-[11%] px-5 py-4">Trạng thái</th>
-                <th className="w-[14%] px-5 py-4">Ghi chú</th>
-                <th className="w-[5%] px-5 py-4 text-center">Thao tác</th>
-              </tr>
+              {scope === "completed" ? (
+                <tr>
+                  <th className="w-[7%] px-5 py-4">STT</th>
+                  <th className="w-[18%] px-5 py-4">Cặp đôi</th>
+                  <th className="w-[14%] px-5 py-4">Nguồn đơn</th>
+                  <th className="w-[18%] px-5 py-4">Dịch vụ</th>
+                  <th className="w-[12%] px-5 py-4 text-right">Tổng tiền</th>
+                  <th className="w-[14%] px-5 py-4">Thanh toán</th>
+                  <th className="w-[12%] px-5 py-4">Ngày hoàn thành</th>
+                </tr>
+              ) : (
+                <tr>
+                  <th className="w-[5%] px-5 py-4">STT</th>
+                  <th className="w-[17%] px-5 py-4">Tên cô dâu & chú rể</th>
+                  <th className="w-[10%] px-5 py-4">Ngày cưới</th>
+                  <th className="w-[12%] px-5 py-4">Loại dịch vụ</th>
+                  <th className="w-[10%] px-5 py-4">Ngày bàn giao</th>
+                  <th className="w-[8%] px-5 py-4 text-right">Tiền cọc</th>
+                  <th className="w-[8%] px-5 py-4 text-right">Tổng tiền</th>
+                  <th className="w-[11%] px-5 py-4">Trạng thái</th>
+                  <th className="w-[14%] px-5 py-4">Ghi chú</th>
+                  <th className="w-[5%] px-5 py-4 text-center">Thao tác</th>
+                </tr>
+              )}
             </thead>
             <tbody>
-              {visibleOrders.map((order, index) => (
-                <tr
-                  className="border-b border-slate-100 last:border-0 hover:bg-blue-50/20"
-                  key={order.id}
-                >
-                  <td className="px-5 py-5 font-extrabold text-slate-700">
-                    {String(index + 1).padStart(2, "0")}
-                  </td>
-                  <td className="px-5 py-5">
-                    <p className="font-extrabold text-slate-700">
-                      {order.bride_name || "Cô dâu"} &{" "}
-                      {order.groom_name || "Chú rể"}
-                    </p>
-                  </td>
-                  <td className="whitespace-nowrap px-5 py-5 text-sm font-medium text-slate-700">
-                    {formatDate(order.wedding_date)}
-                  </td>
-                  <td className="px-5 py-5">
-                    <div className="flex flex-wrap gap-1.5">
-                      {serviceIds(order).length ? (
-                        serviceIds(order).map((id) => (
-                          <ServicePill key={id} serviceId={id} />
-                        ))
-                      ) : (
-                        <span className="text-sm text-slate-500">
+              {scope === "completed"
+                ? visibleOrders.map((order, index) => {
+                    const paymentStatus =
+                      order.payment_status ||
+                      (Number(order.deposit_amount || 0) >=
+                        Number(order.total_amount || 0) &&
+                      Number(order.total_amount || 0) > 0
+                        ? "paid"
+                        : "unpaid");
+                    return (
+                      <tr
+                        className="border-b border-slate-100 last:border-0 hover:bg-blue-50/20"
+                        key={order.id}
+                      >
+                        <td className="px-5 py-4 font-extrabold text-slate-700">
+                          {String(index + 1).padStart(2, "0")}
+                        </td>
+                        <td className="px-5 py-4 font-bold leading-6 text-slate-800">
+                          {order.bride_name || "Cô dâu"} &amp;
+                          <br />
+                          {order.groom_name || "Chú rể"}
+                        </td>
+                        <td className="px-5 py-4 text-sm font-medium text-slate-700">
+                          {orderSources[order.order_source || "customer"] ||
+                            orderSources.customer}
+                          {order.partner_name ? ` · ${order.partner_name}` : ""}
+                        </td>
+                        <td className="px-5 py-4 text-sm text-slate-700">
                           {serviceNames(order)}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-5 py-5 text-sm font-medium text-slate-700">
-                    {formatDate(order.expected_delivery_date)}
-                  </td>
-                  <td className="whitespace-nowrap px-5 py-5 text-right text-sm font-bold text-emerald-600">
-                    {formatMoney(order.deposit_amount)}
-                  </td>
-                  <td className="whitespace-nowrap px-5 py-5 text-right text-sm font-extrabold text-slate-900">
-                    {formatMoney(order.total_amount)}
-                  </td>
-                  <td className="px-5 py-5">
-                    <span
-                      className={`inline-flex whitespace-nowrap items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-extrabold ${statusStyles[order.status] || statusStyles.new}`}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-extrabold text-slate-900">
+                          {formatMoney(order.total_amount)}
+                        </td>
+                        <td className="px-5 py-4">
+                          <select
+                            aria-label={`Trạng thái thanh toán đơn của ${order.bride_name} và ${order.groom_name}`}
+                            className={`h-9 rounded-lg border px-3 text-xs font-bold outline-none transition ${paymentStatus === "paid" ? "border-emerald-100 bg-emerald-50 text-emerald-600" : "border-amber-100 bg-amber-50 text-amber-700"}`}
+                            onChange={(event) =>
+                              updatePaymentStatus(order.id, event.target.value)
+                            }
+                            value={paymentStatus}
+                          >
+                            <option value="unpaid">Chưa thanh toán</option>
+                            <option value="paid">Đã thanh toán</option>
+                          </select>
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-4 text-sm font-medium text-slate-700">
+                          {formatDate(order.updated_at?.slice(0, 10))}
+                        </td>
+                      </tr>
+                    );
+                  })
+                : visibleOrders.map((order, index) => (
+                    <tr
+                      className="border-b border-slate-100 last:border-0 hover:bg-blue-50/20"
+                      key={order.id}
                     >
-                      <i className="size-1.5 rounded-full bg-current" />
-                      {statusLabels[order.status] || "Mới nhận"}
-                    </span>
-                  </td>
-                  <td className="px-5 py-5 text-sm leading-5 text-slate-600">
-                    {order.note || "—"}
-                  </td>
-                  <td className="relative px-5 py-5 text-center">
-                    <button
-                      aria-label="Thao tác đơn hàng"
-                      className="inline-grid size-10 place-items-center rounded-xl border border-blue-100 bg-white text-slate-600 hover:bg-blue-50 hover:text-blue-600"
-                      onClick={() =>
-                        setActiveMenu(activeMenu === order.id ? null : order.id)
-                      }
-                      type="button"
-                    >
-                      <MoreVertical size={18} />
-                    </button>
-                    {activeMenu === order.id ? (
-                      <div className="absolute right-5 top-14 z-20 w-40 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-left shadow-xl">
+                      <td className="px-5 py-5 font-extrabold text-slate-700">
+                        {String(index + 1).padStart(2, "0")}
+                      </td>
+                      <td className="px-5 py-5">
+                        <p className="font-extrabold text-slate-700">
+                          {order.bride_name || "Cô dâu"} &{" "}
+                          {order.groom_name || "Chú rể"}
+                        </p>
+                        <p
+                          className={`mt-1 inline-flex rounded-[5px] px-2 py-0.5 text-xs font-bold ${sourceStyles[order.order_source || "customer"] || sourceStyles.customer}`}
+                        >
+                          {orderSources[order.order_source || "customer"] ||
+                            orderSources.customer}
+                          {order.partner_name ? ` · ${order.partner_name}` : ""}
+                        </p>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-5 text-sm font-medium text-slate-700">
+                        {formatDate(order.wedding_date)}
+                      </td>
+                      <td className="px-5 py-5">
+                        <div className="flex flex-wrap gap-1.5">
+                          {serviceIds(order).length ? (
+                            serviceIds(order).map((id) => (
+                              <ServicePill key={id} serviceId={id} />
+                            ))
+                          ) : (
+                            <span className="text-sm text-slate-500">
+                              {serviceNames(order)}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-5 text-sm font-medium text-slate-700">
+                        {formatDate(order.expected_delivery_date)}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-5 text-right text-sm font-bold text-emerald-600">
+                        {formatMoney(order.deposit_amount)}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-5 text-right text-sm font-extrabold text-slate-900">
+                        {formatMoney(order.total_amount)}
+                      </td>
+                      <td className="relative px-5 py-5">
                         <button
-                          className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold hover:bg-slate-50"
-                          onClick={() => {
-                            setViewingOrder(order);
-                            setActiveMenu(null);
-                          }}
+                          aria-expanded={activeStatusMenu === order.id}
+                          aria-label={`Đổi trạng thái đơn của ${order.bride_name} và ${order.groom_name}`}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition hover:brightness-95 ${statusStyles[order.status] || statusStyles.new}`}
+                          onClick={() =>
+                            setActiveStatusMenu(
+                              activeStatusMenu === order.id ? null : order.id,
+                            )
+                          }
                           type="button"
                         >
-                          <Eye size={16} className="text-blue-600" />
-                          Xem chi tiết
+                          {statusLabels[order.status] || "Mới nhận"}
+                          <ChevronDown size={14} />
                         </button>
+                        {activeStatusMenu === order.id ? (
+                          <div className="absolute left-5 top-14 z-20 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
+                            {Object.entries(statusLabels).map(
+                              ([value, label]) => (
+                                <button
+                                  className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold hover:bg-slate-50 ${value === order.status ? "bg-slate-50" : ""}`}
+                                  key={value}
+                                  onClick={async () => {
+                                    setActiveStatusMenu(null);
+                                    if (value !== order.status)
+                                      await updateStatus(order.id, value);
+                                  }}
+                                  type="button"
+                                >
+                                  {label}
+                                </button>
+                              ),
+                            )}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-5 py-5 text-sm leading-5 text-slate-600">
+                        {order.note || "—"}
+                      </td>
+                      <td className="relative px-5 py-5 text-center">
                         <button
-                          className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold hover:bg-slate-50"
-                          onClick={() => openEdit(order)}
+                          aria-label="Thao tác đơn hàng"
+                          className="inline-grid size-10 place-items-center rounded-xl border border-blue-100 bg-white text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+                          onClick={() =>
+                            setActiveMenu(
+                              activeMenu === order.id ? null : order.id,
+                            )
+                          }
                           type="button"
                         >
-                          <Pencil size={16} className="text-amber-600" />
-                          Sửa đơn
+                          <MoreVertical size={18} />
                         </button>
-                        <button
-                          className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50"
-                          onClick={() => deleteOrder(order)}
-                          type="button"
-                        >
-                          <Trash2 size={16} />
-                          Xóa đơn
-                        </button>
-                      </div>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
+                        {activeMenu === order.id ? (
+                          <div className="absolute right-5 top-14 z-20 w-40 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-left shadow-xl">
+                            <button
+                              className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold hover:bg-slate-50"
+                              onClick={() => {
+                                setViewingOrder(order);
+                                setActiveMenu(null);
+                              }}
+                              type="button"
+                            >
+                              <Eye size={16} className="text-blue-600" />
+                              Xem chi tiết
+                            </button>
+                            <button
+                              className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold hover:bg-slate-50"
+                              onClick={() => openEdit(order)}
+                              type="button"
+                            >
+                              <Pencil size={16} className="text-amber-600" />
+                              Sửa đơn
+                            </button>
+                            <button
+                              className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50"
+                              onClick={() => requestDelete(order)}
+                              type="button"
+                            >
+                              <Trash2 size={16} />
+                              Xóa đơn
+                            </button>
+                          </div>
+                        ) : null}
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
           {!visibleOrders.length ? (
@@ -715,6 +1187,18 @@ function AdminOrders() {
                 </button>
               </div>
               <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs font-bold text-slate-500">
+                    Nguồn đơn
+                  </dt>
+                  <dd className="mt-1 text-sm font-bold">
+                    {orderSources[viewingOrder.order_source || "customer"] ||
+                      orderSources.customer}
+                    {viewingOrder.partner_name
+                      ? ` · ${viewingOrder.partner_name}`
+                      : ""}
+                  </dd>
+                </div>
                 <div>
                   <dt className="text-xs font-bold text-slate-500">Dịch vụ</dt>
                   <dd className="mt-1 text-sm font-bold">
@@ -786,6 +1270,128 @@ function AdminOrders() {
                 <Pencil size={16} />
                 Sửa đơn
               </button>
+            </article>
+          </div>
+        ) : null}
+        {successMessage ? (
+          <div
+            className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/35 p-4"
+            onMouseDown={() => setSuccessMessage("")}
+          >
+            <article
+              className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-600">
+                <Check size={28} />
+              </span>
+              <h2 className="mt-4 text-xl font-extrabold text-slate-900">
+                Thành công
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {successMessage}
+              </p>
+              <button
+                className="mt-6 h-11 w-full rounded-xl bg-blue-600 text-sm font-extrabold text-white transition hover:bg-blue-700"
+                onClick={() => setSuccessMessage("")}
+                type="button"
+              >
+                Đã hiểu
+              </button>
+            </article>
+          </div>
+        ) : null}
+        {deleteCandidate ? (
+          <div
+            className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/35 p-4"
+            onMouseDown={() => setDeleteCandidate(null)}
+          >
+            <article
+              className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <span className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-rose-600">
+                <Trash2 size={25} />
+              </span>
+              <h2 className="mt-4 text-xl font-extrabold text-slate-900">
+                Xác nhận xóa đơn?
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Bạn sắp xóa đơn của{" "}
+                <strong>
+                  {deleteCandidate.bride_name} &amp;{" "}
+                  {deleteCandidate.groom_name}
+                </strong>
+                . Thao tác này không thể hoàn tác.
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  className="h-11 rounded-xl border border-slate-200 text-sm font-extrabold text-slate-600 hover:bg-slate-50"
+                  onClick={() => setDeleteCandidate(null)}
+                  type="button"
+                >
+                  Hủy
+                </button>
+                <button
+                  className="h-11 rounded-xl bg-rose-600 text-sm font-extrabold text-white hover:bg-rose-700"
+                  onClick={deleteOrder}
+                  type="button"
+                >
+                  Xóa đơn
+                </button>
+              </div>
+            </article>
+          </div>
+        ) : null}
+        {partnerDeleteCandidate ? (
+          <div
+            className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/35 p-4"
+            onMouseDown={() => setPartnerDeleteCandidate(null)}
+          >
+            <article
+              className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <span className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-rose-600">
+                <Trash2 size={25} />
+              </span>
+              <h2 className="mt-4 text-xl font-extrabold text-slate-900">
+                {partnerHasOrders(partnerDeleteCandidate.id)
+                  ? "Ngừng hợp tác?"
+                  : `Xóa ${partnerConfig?.label}?`}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {partnerHasOrders(partnerDeleteCandidate.id) ? (
+                  <>
+                    Studio/CTV <strong>{partnerDeleteCandidate.name}</strong> đã
+                    có đơn hàng. Đơn cũ được giữ nguyên, nhưng đối tác này sẽ
+                    không còn xuất hiện khi tạo đơn mới.
+                  </>
+                ) : (
+                  <>
+                    Bạn sắp xóa <strong>{partnerDeleteCandidate.name}</strong>.
+                    Studio/CTV này chưa có đơn hàng nên có thể xóa vĩnh viễn.
+                  </>
+                )}
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  className="h-11 rounded-xl border border-slate-200 text-sm font-extrabold text-slate-600 hover:bg-slate-50"
+                  onClick={() => setPartnerDeleteCandidate(null)}
+                  type="button"
+                >
+                  Hủy
+                </button>
+                <button
+                  className={`h-11 rounded-xl text-sm font-extrabold text-white ${partnerHasOrders(partnerDeleteCandidate.id) ? "bg-amber-500 hover:bg-amber-600" : "bg-rose-600 hover:bg-rose-700"}`}
+                  onClick={deletePartner}
+                  type="button"
+                >
+                  {partnerHasOrders(partnerDeleteCandidate.id)
+                    ? "Ngừng hợp tác"
+                    : "Xóa vĩnh viễn"}
+                </button>
+              </div>
             </article>
           </div>
         ) : null}

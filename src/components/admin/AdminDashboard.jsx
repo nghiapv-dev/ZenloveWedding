@@ -1,19 +1,24 @@
 import { useEffect, useState } from "react";
 import {
   Bell,
+  BriefcaseBusiness,
+  BarChart3,
   CalendarDays,
+  CircleCheckBig,
   ChevronDown,
   ChevronRight,
-  Home,
-  Settings,
-  Users,
   CalendarHeart,
   ClipboardList,
+  Clock3,
   Lock,
+  ListTodo,
+  Menu,
   Music,
   Plus,
   Sparkles,
+  TrendingUp,
   Video,
+  WalletCards,
 } from "lucide-react";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
 import {
@@ -29,67 +34,23 @@ import AdminShowcase from "./AdminShowcase.jsx";
 import AdminSystem from "./AdminSystem.jsx";
 import AdminContentManager from "./AdminContentManager.jsx";
 import AdminOrders from "./AdminOrders.jsx";
+import AdminSidebar from "./AdminSidebar.jsx";
+import AdminLogin from "./AdminLogin.jsx";
 
-function Login({ onLogin }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
-
-  const submit = async (event) => {
-    event.preventDefault();
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) return setMessage("Email hoặc mật khẩu chưa đúng.");
-    onLogin(data.session);
-  };
-
-  return (
-    <main className="min-h-screen bg-[#fffafa] px-4 py-8 text-slate-950">
-      <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md items-center">
-        <form
-          className="w-full rounded-3xl border border-rose-100 bg-white p-6 shadow-[0_18px_50px_rgba(229,65,83,0.12)]"
-          onSubmit={submit}
-        >
-          <div className="grid size-14 place-items-center rounded-2xl bg-[#E54153] text-white">
-            <Lock size={26} />
-          </div>
-          <p className="mt-5 text-xs font-extrabold uppercase tracking-[0.16em] text-[#E54153]">
-            Zenlove Wedding Admin
-          </p>
-          <h1 className="mt-2 text-2xl font-extrabold">Đăng nhập quản trị</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Quản lý toàn bộ thư viện và sản phẩm của Zenlove Wedding.
-          </p>
-          <input
-            className="mt-6 h-12 w-full rounded-xl border border-rose-100 bg-[#fffafa] px-4 text-sm font-bold outline-none focus:border-[#E54153]"
-            placeholder="Email admin"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <input
-            className="mt-3 h-12 w-full rounded-xl border border-rose-100 bg-[#fffafa] px-4 text-sm font-bold outline-none focus:border-[#E54153]"
-            placeholder="Mật khẩu"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-          {message ? (
-            <p className="mt-3 text-sm font-bold text-[#E54153]">{message}</p>
-          ) : null}
-          <button
-            className="mt-5 h-12 w-full rounded-xl bg-[#E54153] text-sm font-extrabold text-white transition hover:bg-[#c93345]"
-            type="submit"
-          >
-            Vào dashboard
-          </button>
-        </form>
-      </section>
-    </main>
-  );
-}
+const orderStatusLabels = {
+  new: "Mới nhận",
+  working: "Đang làm",
+  review: "Chờ duyệt",
+  completed: "Hoàn thành",
+};
+const orderStatusStyles = {
+  new: "bg-blue-50 text-blue-600",
+  working: "bg-amber-50 text-amber-600",
+  review: "bg-violet-50 text-violet-600",
+  completed: "bg-emerald-50 text-emerald-600",
+};
+const statusLabels = orderStatusLabels;
+const statusStyles = orderStatusStyles;
 
 function SetupNotice() {
   return (
@@ -125,6 +86,11 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
     month: 0,
   });
   const [topTemplates, setTopTemplates] = useState([]);
+  const [dashboardOrders, setDashboardOrders] = useState([]);
+  const [orderTaskTab, setOrderTaskTab] = useState("all");
+  const [orderTrendDays, setOrderTrendDays] = useState(7);
+  const [orderTrendMetric, setOrderTrendMetric] = useState("count");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const formattedDate = new Intl.DateTimeFormat("vi-VN", {
     weekday: "long",
     day: "2-digit",
@@ -202,6 +168,146 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
     .join(" ");
   const chartArea = `40,180 ${chartPoints} 660,180`;
   const chartLabelStep = Math.max(1, Math.ceil(chartDays.length / 7));
+  const todayKey = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+  });
+  const threeDaysLaterKey = (() => {
+    const date = new Date(`${todayKey}T00:00:00`);
+    date.setDate(date.getDate() + 3);
+    return date.toLocaleDateString("en-CA");
+  })();
+  const orderSummary = dashboardOrders.reduce(
+    (summary, order) => {
+      summary.total += 1;
+      summary[order.status || "new"] += 1;
+      summary.receivable += Math.max(
+        Number(order.total_amount || 0) - Number(order.deposit_amount || 0),
+        0,
+      );
+      summary.totalAmount += Number(order.total_amount || 0);
+      summary.depositAmount += Number(order.deposit_amount || 0);
+      return summary;
+    },
+    { total: 0, new: 0, working: 0, review: 0, completed: 0, receivable: 0, totalAmount: 0, depositAmount: 0 },
+  );
+  const orderTaskTabs = [
+    { id: "all", label: "Tất cả" },
+    { id: "overdue", label: "Quá hạn" },
+    { id: "today", label: "Hôm nay" },
+    { id: "soon", label: "≤3 ngày" },
+    { id: "review", label: "Chờ duyệt" },
+    { id: "new", label: "Mới nhận" },
+  ];
+  const deadlineMeta = (deadline) => {
+    if (!deadline)
+      return {
+        label: "Chưa đặt deadline",
+        className: "bg-slate-100 text-slate-500",
+        priority: 5,
+      };
+    const days = Math.round(
+      (new Date(`${deadline}T00:00:00`).getTime() -
+        new Date(`${todayKey}T00:00:00`).getTime()) /
+        86400000,
+    );
+    if (days < 0)
+      return {
+        label: `Quá hạn ${Math.abs(days)} ngày`,
+        className: "bg-rose-50 text-rose-600",
+        priority: 0,
+      };
+    if (days === 0)
+      return {
+        label: "Hôm nay",
+        className: "bg-orange-50 text-orange-600",
+        priority: 1,
+      };
+    if (days <= 3)
+      return {
+        label: `Còn ${days} ngày`,
+        className: "bg-amber-50 text-amber-700",
+        priority: 2,
+      };
+    return {
+      label: `Còn ${days} ngày`,
+      className: "bg-blue-50 text-blue-600",
+      priority: 3,
+    };
+  };
+  const actionablePriority = (order) => {
+    const deadlinePriority = deadlineMeta(
+      order.expected_delivery_date,
+    ).priority;
+    if (deadlinePriority <= 2) return deadlinePriority;
+    if (order.status === "review") return 3;
+    if (order.status === "new") return 4;
+    return 5;
+  };
+  const actionableOrders = dashboardOrders
+    .filter((order) => {
+      const deadline = order.expected_delivery_date;
+      if (order.status === "completed") return false;
+      if (orderTaskTab === "review") return order.status === "review";
+      if (orderTaskTab === "new") return order.status === "new";
+      if (!deadline) return orderTaskTab === "all";
+      if (orderTaskTab === "overdue") return deadline < todayKey;
+      if (orderTaskTab === "today") return deadline === todayKey;
+      if (orderTaskTab === "soon")
+        return deadline >= todayKey && deadline <= threeDaysLaterKey;
+      return true;
+    })
+    .sort((a, b) => {
+      const priorityDifference = actionablePriority(a) - actionablePriority(b);
+      return (
+        priorityDifference ||
+        (a.expected_delivery_date || "9999").localeCompare(
+          b.expected_delivery_date || "9999",
+        )
+      );
+    })
+    .slice(0, 6);
+  const trendSources = [
+    { label: "Khách hàng", key: "customer", color: "#2563eb", dot: "bg-blue-600" },
+    { label: "Studio", key: "studio", color: "#10b981", dot: "bg-emerald-500" },
+    { label: "CTV", key: "collaborator", color: "#7c3aed", dot: "bg-violet-600" },
+  ];
+  const orderTrend = Array.from({ length: orderTrendDays }, (_, index) => {
+    const date = new Date(`${todayKey}T00:00:00`);
+    date.setDate(date.getDate() - (orderTrendDays - 1 - index));
+    const key = date.toLocaleDateString("en-CA");
+    const ordersForDay = dashboardOrders.filter(
+      (order) => order.created_at?.slice(0, 10) === key,
+    );
+    return {
+      key,
+      label: new Intl.DateTimeFormat("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+      }).format(date),
+      ...Object.fromEntries(trendSources.map((source) => [
+        source.key,
+        ordersForDay.filter((order) => (order.order_source || "customer") === source.key).reduce(
+          (total, order) => total + (orderTrendMetric === "value" ? Number(order.total_amount || 0) : 1),
+          0,
+        ),
+      ])),
+    };
+  });
+  const highestOrderTrend = Math.max(...orderTrend.flatMap((item) => trendSources.map((source) => item[source.key])), 1);
+  const sourceOrderCounts = trendSources.map((source) => ({
+    ...source,
+    value: dashboardOrders.filter(
+      (order) => (order.order_source || "customer") === source.key,
+    ).length,
+  }));
+  const sourceOrderTotal = sourceOrderCounts.reduce((total, source) => total + source.value, 0);
+  const sourceOrderValue = dashboardOrders.reduce((total, order) => total + Number(order.total_amount || 0), 0);
+  const sourcePercentages = sourceOrderCounts.map((source) => ({ ...source, percent: sourceOrderTotal ? Math.round((source.value / sourceOrderTotal) * 100) : 0 }));
+  const donutStops = sourcePercentages.reduce((stops, source) => {
+    const start = stops.total;
+    const end = start + source.percent;
+    return { total: end, css: [...stops.css, `${source.color} ${start}% ${end}%`] };
+  }, { total: 0, css: [] }).css.join(", ") || "#e2e8f0 0% 100%";
 
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined;
@@ -248,9 +354,13 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
       await supabase.auth.signOut();
       setSession(null);
     };
-    const timeout = window.setTimeout(logoutWhenExpired, remainingAdminSessionMs());
+    const timeout = window.setTimeout(
+      logoutWhenExpired,
+      remainingAdminSessionMs(),
+    );
     const checkWhenReturning = () => {
-      if (document.visibilityState === "visible" && isAdminSessionExpired()) logoutWhenExpired();
+      if (document.visibilityState === "visible" && isAdminSessionExpired())
+        logoutWhenExpired();
     };
 
     document.addEventListener("visibilitychange", checkWhenReturning);
@@ -258,6 +368,20 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
       window.clearTimeout(timeout);
       document.removeEventListener("visibilitychange", checkWhenReturning);
     };
+  }, [session]);
+
+  useEffect(() => {
+    if (!session) return;
+    const loadDashboardOrders = async () => {
+      const { data, error } = await supabase
+        .from("customer_orders")
+        .select(
+          "id, bride_name, groom_name, selected_services, package_name, wedding_date, expected_delivery_date, total_amount, deposit_amount, status, order_source, partner_name, created_at",
+        )
+        .order("created_at", { ascending: false });
+      if (!error) setDashboardOrders(data || []);
+    };
+    loadDashboardOrders();
   }, [session]);
 
   useEffect(() => {
@@ -367,16 +491,22 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
     loadCounts();
   }, [session, rangeDays]);
   if (!isSupabaseConfigured) return <SetupNotice />;
-  if (!session) return <Login onLogin={(nextSession) => { startAdminSession(); setSession(nextSession); }} />;
-  const handleSidebarNavigation = (event) => {
-    const link = event.target.closest("a[href^='/admin']");
-    if (!link || !onNavigate) return;
-    event.preventDefault();
-    onNavigate(link.getAttribute("href"));
-  };
+  if (!session)
+    return (
+      <AdminLogin
+        onLogin={(nextSession) => {
+          startAdminSession();
+          setSession(nextSession);
+        }}
+      />
+    );
   const workspace = {
     templates: <AdminTemplates />,
-    orders: <AdminOrders />,
+    "orders-all": <AdminOrders scope="all" />,
+    "orders-customer": <AdminOrders scope="customer" />,
+    "orders-studio": <AdminOrders scope="studio" />,
+    "orders-collaborator": <AdminOrders scope="collaborator" />,
+    "orders-completed": <AdminOrders scope="completed" />,
     music: <AdminMusic />,
     backgrounds: <AdminShowcase type="background" />,
     slides: <AdminShowcase type="slide" />,
@@ -387,490 +517,556 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
   return (
     <main className="admin-ui min-h-screen p-3 text-slate-800 sm:p-5">
       <div className="mx-auto grid max-w-[1720px] gap-5 lg:grid-cols-[268px_minmax(0,1fr)]">
-        <aside
-          onClick={handleSidebarNavigation}
-          className="rounded-[26px] border border-rose-100 bg-white px-4 py-6 shadow-[0_12px_34px_rgba(229,65,83,0.07)] lg:sticky lg:top-5 lg:h-[calc(100vh-2.5rem)] lg:px-5"
-        >
-          <div className="flex items-center gap-3 px-2">
-            <div className="grid size-11 place-items-center rounded-2xl bg-[#E54153] text-white">
-              <CalendarHeart size={23} />
-            </div>
-            <div>
-              <p className="font-serif text-xl font-bold tracking-wide text-[#d83d50]">
-                ZENLOVE
-              </p>
-              <p className="text-[10px] font-bold tracking-[0.18em] text-slate-400">
-                WEDDING
-              </p>
-            </div>
-          </div>
-          <div className="mt-8">
-            <p className="px-3 text-[11px] font-extrabold tracking-wide text-slate-400">
-              TRANG CHỦ
-            </p>
-            <a
-              className="mt-2 flex h-12 items-center gap-3 rounded-xl bg-[#E54153] px-4 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(229,65,83,0.23)]"
-              href="/admin/dashboard"
-            >
-              <Home size={18} />
-              Tổng quan
-            </a>
-          </div>
-          <div className="mt-7">
-            <p className="px-3 text-[11px] font-extrabold tracking-wide text-slate-400">
-              QUẢN TRỊ NỘI DUNG
-            </p>
-            <nav className="mt-2 grid gap-1">
-              <a
-                className="flex h-11 items-center justify-between rounded-xl px-3 text-sm font-bold text-slate-600 transition hover:bg-rose-50 hover:text-[#E54153]"
-                href="/admin/templates"
-              >
-                <span className="flex items-center gap-3">
-                  <CalendarHeart size={18} />
-                  Thiệp cưới
-                </span>
-                <ChevronRight size={16} />
-              </a>
-              <a className="flex h-11 items-center justify-between rounded-xl px-3 text-sm font-bold text-slate-600 transition hover:bg-rose-50 hover:text-[#E54153]" href="/admin/orders"><span className="flex items-center gap-3"><ClipboardList size={18} />Quản lý đơn khách</span><ChevronRight size={16} /></a>
-              <a
-                className="flex h-11 items-center justify-between rounded-xl px-3 text-sm font-bold text-slate-600 transition hover:bg-rose-50 hover:text-[#E54153]"
-                href="/admin/music"
-              >
-                <span className="flex items-center gap-3">
-                  <Music size={18} />
-                  Nhạc cưới
-                </span>
-                <ChevronRight size={16} />
-              </a>
-              <a
-                className="flex h-11 items-center justify-between rounded-xl px-3 text-sm font-bold text-slate-600 transition hover:bg-rose-50 hover:text-[#E54153]"
-                href="/admin/backgrounds"
-              >
-                <span className="flex items-center gap-3">
-                  <Sparkles size={18} />
-                  Màn sao băng
-                </span>
-                <ChevronRight size={16} />
-              </a>
-              <a
-                className="flex h-11 items-center justify-between rounded-xl px-3 text-sm font-bold text-slate-600 transition hover:bg-rose-50 hover:text-[#E54153]"
-                href="/admin/slides"
-              >
-                <span className="flex items-center gap-3">
-                  <Video size={18} />
-                  Slide cưới
-                </span>
-                <ChevronRight size={16} />
-              </a>
-            </nav>
-          </div>
-          <div className="mt-7 border-t border-rose-100 pt-5">
-            <p className="px-3 text-[11px] font-extrabold tracking-wide text-slate-400">
-              HỆ THỐNG
-            </p>
-            <div className="mt-2 grid gap-1">
-              <a
-                className="flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-bold text-slate-600 transition hover:bg-rose-50 hover:text-[#E54153]"
-                href="/admin/settings"
-              >
-                <Settings size={17} />
-                Cài đặt
-              </a>
-              <a
-                className="flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-bold text-slate-600 transition hover:bg-rose-50 hover:text-[#E54153]"
-                href="/admin/users"
-              >
-                <Users size={17} />
-                Người dùng
-              </a>
-            </div>
-          </div>
-        </aside>
+        <AdminSidebar activeView={activeView} isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} onNavigate={onNavigate} />
 
         <section className="min-w-0 py-2 sm:py-4">
+          <button
+            className="mb-4 inline-flex h-11 items-center gap-2 rounded-xl border border-blue-100 bg-white px-4 text-sm font-extrabold text-slate-700 shadow-sm lg:hidden"
+            onClick={() => setMobileNavOpen(true)}
+            type="button"
+          >
+            <Menu size={19} />
+            Menu quản trị
+          </button>
           {activeView !== "dashboard" ? (
             <div className="admin-workspace">{workspace}</div>
           ) : (
             <>
-              <header className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">
-                    Xin chào, Admin <span className="text-base">👋</span>
-                  </h1>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Chào mừng bạn trở lại với Zenlove Wedding
-                  </p>
+              <section className="mt-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Tổng quan</h1>
+                  <button className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-100 bg-white px-3 text-xs font-bold text-slate-600 shadow-sm transition hover:border-blue-200" type="button"><CalendarDays className="text-blue-600" size={15} />Hôm nay: {new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date())}<ChevronDown size={14} /></button>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="inline-flex items-center gap-3 rounded-2xl border border-rose-100 bg-white px-4 py-3 text-xs font-bold text-slate-600 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
-                    <CalendarDays className="text-[#E54153]" size={18} />
-                    {formattedDate}
-                  </div>
-                  <button
-                    className="relative grid size-11 place-items-center rounded-2xl border border-rose-100 bg-white text-slate-600 shadow-[0_8px_20px_rgba(15,23,42,0.04)]"
-                    type="button"
-                    aria-label="Thông báo"
-                  >
-                    <Bell size={19} />
-                    <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-[#E54153] text-[9px] font-extrabold text-white">
-                      3
-                    </span>
-                  </button>
-                </div>
-              </header>
-              <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="relative overflow-hidden rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)]">
-                  <span className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-[#E54153]">
-                    <CalendarHeart size={26} />
-                  </span>
-                  <div>
-                    <p className="text-sm font-medium text-slate-500">
-                      Thiệp cưới
-                    </p>
-                    <p className="mt-1 text-2xl font-extrabold">
-                      {templateLibraryCount}
-                    </p>
-                    <p className="text-xs text-slate-400">Mẫu đang hiển thị</p>
-                  </div>
-                </div>
-                <div className="relative overflow-hidden rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)]">
-                  <span className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-[#E54153]">
-                    <Music size={26} />
-                  </span>
-                  <div>
-                    <p className="text-sm font-medium text-slate-500">
-                      Nhạc cưới
-                    </p>
-                    <p className="mt-1 text-2xl font-extrabold">{musicCount}</p>
-                    <p className="text-xs text-slate-400">Bài nhạc đã lưu</p>
-                  </div>
-                </div>
-                <div className="relative overflow-hidden rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)]">
-                  <span className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-[#E54153]">
-                    <Sparkles size={26} />
-                  </span>
-                  <div>
-                    <p className="text-sm font-medium text-slate-500">
-                      Màn sao băng
-                    </p>
-                    <p className="mt-1 text-2xl font-extrabold">
-                      {backgroundLibraryCount}
-                    </p>
-                    <p className="text-xs text-slate-400">Mẫu background</p>
-                  </div>
-                </div>
-                <div className="relative overflow-hidden rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)]">
-                  <span className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-[#E54153]">
-                    <Video size={26} />
-                  </span>
-                  <div>
-                    <p className="text-sm font-medium text-slate-500">
-                      Slide cưới
-                    </p>
-                    <p className="mt-1 text-2xl font-extrabold">
-                      {slideLibraryCount}
-                    </p>
-                    <p className="text-xs text-slate-400">Mẫu slide</p>
-                  </div>
-                </div>
-              </div>
-              <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(290px,0.55fr)]">
-                <div className="rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)] sm:p-6">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#E54153]">
-                        Tương tác khách hàng
-                      </p>
-                      <h2 className="mt-1 text-xl font-extrabold text-slate-900">
-                        Lượt nhấp xem mẫu
-                      </h2>
-                    </div>
-                    <label className="inline-flex items-center gap-2 rounded-xl border border-rose-100 bg-white px-3 py-2 text-xs font-extrabold text-slate-600">
-                      <CalendarDays className="text-[#E54153]" size={15} />
-                      <select
-                        className="appearance-none border-0 bg-transparent p-0 pr-4 text-xs font-extrabold outline-none"
-                        value={rangeDays}
-                        onChange={(event) =>
-                          setRangeDays(Number(event.target.value))
-                        }
-                      >
-                        <option value={7}>7 ngày qua</option>
-                        <option value={30}>30 ngày qua</option>
-                        <option value={90}>90 ngày qua</option>
-                      </select>
-                      <ChevronDown
-                        className="-ml-5 pointer-events-none"
-                        size={14}
-                      />
-                    </label>
-                  </div>
-                  <div className="mt-5 overflow-x-auto">
-                    <svg
-                      className="h-60 min-w-[620px] w-full"
-                      viewBox="0 0 700 220"
-                      role="img"
-                      aria-label="Biểu đồ lượt nhấp 7 ngày qua"
-                    >
-                      {[50, 90, 130, 170].map((y) => (
-                        <line
-                          key={y}
-                          x1="40"
-                          x2="660"
-                          y1={y}
-                          y2={y}
-                          stroke="#e6eff8"
-                          strokeWidth="1"
-                        />
-                      ))}
-                      <polygon points={chartArea} fill="url(#click-fill)" />
-                      <polyline
-                        points={chartPoints}
-                        fill="none"
-                        stroke="#2563eb"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="4"
-                      />
-                      {chartDays.map((item, index) => {
-                        const [x, y] = chartPoints.split(" ")[index].split(",");
-                        const showLabel =
-                          index === 0 ||
-                          index === chartDays.length - 1 ||
-                          index % chartLabelStep === 0;
-                        return (
-                          <g key={item.key}>
-                            <circle
-                              cx={x}
-                              cy={y}
-                              fill="#fff"
-                              r="6"
-                              stroke="#2563eb"
-                              strokeWidth="3"
-                            />
-                            {showLabel ? (
-                              <text
-                                x={x}
-                                y="207"
-                                textAnchor="middle"
-                                fill="#71839a"
-                                fontSize="11"
-                                fontWeight="700"
-                              >
-                                {item.label}
-                              </text>
-                            ) : null}
-                          </g>
-                        );
-                      })}
-                      <defs>
-                        <linearGradient
-                          id="click-fill"
-                          x1="0"
-                          x2="0"
-                          y1="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="0%"
-                            stopColor="#2563eb"
-                            stopOpacity="0.22"
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor="#2563eb"
-                            stopOpacity="0"
-                          />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </div>
-                  <div className="mt-2 grid grid-cols-3 divide-x divide-slate-100 rounded-2xl bg-slate-50/70 p-3">
-                    {clickComparison.map((item) => (
-                      <div className="px-3" key={item.label}>
-                        <p className="text-xs font-bold text-slate-500">
-                          {item.label}
-                        </p>
-                        <p className="mt-1 text-xl font-extrabold text-slate-900">
-                          {item.value}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <aside className="rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)] sm:p-6">
-                  <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#E54153]">
-                    Phân bổ nội dung
-                  </p>
-                  <div className="mt-5 flex items-center gap-5">
-                    <div
-                      className="grid size-28 shrink-0 place-items-center rounded-full"
-                      style={{
-                        background: `conic-gradient(#2563eb 0 ${templateShare}%, #0ea5e9 ${templateShare}% ${templateShare + musicShare}%, #38bdf8 ${templateShare + musicShare}% ${templateShare + musicShare + backgroundShare}%, #7dd3fc ${templateShare + musicShare + backgroundShare}% 100%)`,
-                      }}
-                    >
-                      <div className="grid size-20 place-items-center rounded-full bg-white text-center">
-                        <strong className="text-xl text-slate-900">
-                          {totalContent}
-                        </strong>
-                        <span className="-mt-2 text-[10px] font-bold text-slate-400">
-                          TỔNG
-                        </span>
-                      </div>
-                    </div>
-                    <div className="grid gap-2 text-xs font-bold text-slate-600">
-                      {contentStats.map((item) => (
-                        <div
-                          className="flex items-center gap-2"
-                          key={item.label}
-                        >
-                          <span
-                            className="size-2.5 rounded-full"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span>{item.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <p className="mt-5 border-t border-slate-100 pt-4 text-sm leading-6 text-slate-500">
-                    Biểu đồ lượt nhấp bắt đầu ghi nhận sau khi tính năng được
-                    bật.
-                  </p>
-                </aside>
-              </section>
-              <section className="mt-5 grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
-                <div className="rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)] sm:p-6">
-                  <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#E54153]">
-                    So sánh lượt xem
-                  </p>
-                  <div className="mt-5 grid gap-3">
-                    {[
-                      { label: "Hôm nay", value: periodClicks.today },
-                      { label: "7 ngày qua", value: periodClicks.week },
-                      { label: "30 ngày qua", value: periodClicks.month },
-                    ].map((item) => (
-                      <div
-                        className="flex items-center justify-between rounded-2xl bg-rose-50/50 px-4 py-3"
-                        key={item.label}
-                      >
-                        <span className="text-sm font-bold text-slate-600">
-                          {item.label}
-                        </span>
-                        <strong className="text-2xl text-slate-900">
-                          {item.value}
-                        </strong>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="mt-4 text-xs leading-5 text-slate-500">
-                    Lượt nhấp được tính từ khách mở mẫu trên website.
-                  </p>
-                </div>
-                <div className="rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)] sm:p-6">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#E54153]">
-                        Top mẫu được xem
-                      </p>
-                      <h2 className="mt-1 text-xl font-extrabold text-slate-900">
-                        Top 10 trong 30 ngày
-                      </h2>
-                    </div>
-                    <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-extrabold text-[#E54153]">
-                      {topTemplates.length} mẫu
-                    </span>
-                  </div>
-                  {topTemplates.length ? (
-                    <ol className="mt-4 grid divide-y divide-slate-100">
-                      {topTemplates.map((item, index) => (
-                        <li
-                          className="flex items-center gap-3 py-3"
-                          key={item.key}
-                        >
-                          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-rose-50 text-sm font-extrabold text-[#E54153]">
-                            {index + 1}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-extrabold text-slate-800">
-                              {item.name}
-                            </p>
-                            <p className="mt-0.5 text-xs text-slate-500">
-                              {item.category === "wedding"
-                                ? "Thiệp cưới"
-                                : item.category === "video"
-                                  ? "Slide cưới"
-                                  : "Màn sao băng"}
-                            </p>
-                          </div>
-                          <strong className="text-sm text-slate-900">
-                            {item.clicks} lượt
-                          </strong>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <div className="mt-4 rounded-2xl bg-rose-50/50 p-6 text-center text-sm font-bold text-slate-500">
-                      Chưa có lượt xem theo từng mẫu.
-                    </div>
-                  )}
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                  {[
+                    { label: "Tổng số đơn", value: orderSummary.total, icon: ClipboardList, tone: "bg-blue-50 text-blue-600", note: "Tổng đơn hiện có" },
+                    { label: "Mới nhận", value: orderSummary.new, icon: BriefcaseBusiness, tone: "bg-emerald-50 text-emerald-600", note: "Cần bắt đầu xử lý" },
+                    { label: "Đang làm", value: orderSummary.working, icon: Sparkles, tone: "bg-amber-50 text-amber-600", note: "Đang thực hiện" },
+                    { label: "Chờ khách duyệt", value: orderSummary.review, icon: Clock3, tone: "bg-violet-50 text-violet-600", note: "Đang chờ phản hồi" },
+                    { label: "Đã hoàn thành", value: orderSummary.completed, icon: CircleCheckBig, tone: "bg-emerald-50 text-emerald-600", note: "Đơn đã xử lý xong" },
+                  ].map((item) => { const Icon = item.icon; return <article className="min-h-36 rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.04)]" key={item.label}><div className="flex items-start gap-3"><span className={`grid size-10 shrink-0 place-items-center rounded-xl ${item.tone}`}><Icon size={20} /></span><div><p className="text-[11px] font-bold text-slate-500">{item.label}</p><strong className="mt-1 block text-2xl font-extrabold tracking-tight text-slate-800">{item.value}</strong></div></div><p className="mt-4 flex items-center gap-1 text-[11px] font-bold text-emerald-600"><TrendingUp size={13} />{item.note}</p></article>; })}
+                  <article className="min-h-36 rounded-2xl border border-rose-100 bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.04)]"><div className="flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-500"><WalletCards size={20} /></span><div><p className="text-[11px] font-bold text-slate-500">Còn phải thu</p><strong className="mt-1 block text-xl font-extrabold tracking-tight text-slate-800">{orderSummary.receivable.toLocaleString("vi-VN")}đ</strong></div></div><div className="mt-3 space-y-1 text-[11px] font-bold"><p className="flex justify-between text-slate-500"><span>Tổng tiền đơn</span><span>{orderSummary.totalAmount.toLocaleString("vi-VN")}đ</span></p><p className="flex justify-between text-slate-500"><span>Đã đặt cọc</span><span>{orderSummary.depositAmount.toLocaleString("vi-VN")}đ</span></p><p className="flex justify-between border-t border-rose-100 pt-1 text-rose-500"><span>Còn phải thu</span><span>{orderSummary.receivable.toLocaleString("vi-VN")}đ</span></p></div></article>
                 </div>
               </section>
-              <section className="mt-5 rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)] sm:p-6">
-                <div className="flex items-center justify-between gap-3">
+
+              <section className="mt-5 rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.05)] sm:p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#E54153]">
-                      Thao tác nhanh
+                    <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-blue-600">
+                      Cần xử lý
                     </p>
                     <h2 className="mt-1 text-xl font-extrabold text-slate-900">
-                      Cập nhật thư viện
+                      Các đơn cần theo dõi
                     </h2>
                   </div>
+                  <button
+                    className="text-sm font-extrabold text-blue-600 hover:text-blue-800"
+                    onClick={() =>
+                      onNavigate?.(`/admin/orders?task=${orderTaskTab}`)
+                    }
+                    type="button"
+                  >
+                    Xem tất cả →
+                  </button>
                 </div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  {[
-                    {
-                      label: "Thêm thiệp cưới",
-                      href: "/admin/templates",
-                      icon: CalendarHeart,
-                    },
-                    {
-                      label: "Thêm nhạc cưới",
-                      href: "/admin/music",
-                      icon: Music,
-                    },
-                    {
-                      label: "Thêm màn sao băng",
-                      href: "/admin/backgrounds",
-                      icon: Sparkles,
-                    },
-                    {
-                      label: "Thêm slide cưới",
-                      href: "/admin/slides",
-                      icon: Video,
-                    },
-                  ].map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <a
-                        className="group flex items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50/40 p-4 transition hover:-translate-y-0.5 hover:border-rose-300"
-                        href={item.href}
-                        key={item.href}
-                      >
-                        <span className="grid size-10 place-items-center rounded-xl bg-white text-[#E54153] shadow-sm">
-                          <Icon size={20} />
-                        </span>
-                        <span className="min-w-0 flex-1 text-sm font-extrabold text-slate-800">
-                          {item.label}
-                        </span>
-                        <Plus
-                          className="text-[#E54153] transition group-hover:rotate-90"
-                          size={18}
-                        />
-                      </a>
-                    );
-                  })}
+                <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+                  {orderTaskTabs.map((tab) => (
+                    <button
+                      className={`shrink-0 rounded-xl px-3 py-2 text-sm font-extrabold transition ${orderTaskTab === tab.id ? "bg-blue-600 text-white" : "bg-slate-50 text-slate-600 hover:bg-blue-50"}`}
+                      key={tab.id}
+                      onClick={() => setOrderTaskTab(tab.id)}
+                      type="button"
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-5 overflow-x-auto">
+                  <table className="w-full min-w-[760px] text-left">
+                    <thead className="border-y border-slate-100 text-xs uppercase tracking-wide text-slate-400">
+                      <tr>
+                        <th className="py-3 pr-4">Cặp đôi</th>
+                        <th className="px-4 py-3">Nguồn</th>
+                        <th className="px-4 py-3">Dịch vụ</th>
+                        <th className="px-4 py-3">Deadline</th>
+                        <th className="py-3 pl-4">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {actionableOrders.map((order) => {
+                        const deadline = deadlineMeta(
+                          order.expected_delivery_date,
+                        );
+                        const orderPath =
+                          order.order_source === "studio"
+                            ? "/admin/orders/studio"
+                            : order.order_source === "collaborator"
+                              ? "/admin/orders/collaborator"
+                              : "/admin/orders/customer";
+                        return (
+                          <tr
+                            className="cursor-pointer border-b border-slate-100 transition hover:bg-blue-50/60 last:border-0"
+                            key={order.id}
+                            onClick={() =>
+                              onNavigate?.(`${orderPath}?order=${order.id}`)
+                            }
+                          >
+                            <td className="py-4 pr-4 font-extrabold text-slate-800">
+                              {order.bride_name || "Cô dâu"} &amp;{" "}
+                              {order.groom_name || "Chú rể"}
+                            </td>
+                            <td className="px-4 py-4 text-sm font-bold text-slate-600">
+                              {order.order_source === "studio"
+                                ? "Studio"
+                                : order.order_source === "collaborator"
+                                  ? "CTV"
+                                  : "Khách hàng"}
+                              {order.partner_name
+                                ? ` · ${order.partner_name}`
+                                : ""}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-slate-600">
+                              {Array.isArray(order.selected_services) &&
+                              order.selected_services.length
+                                ? order.selected_services
+                                    .map(
+                                      (item) =>
+                                        ({
+                                          wedding: "Thiệp",
+                                          slide: "Slide",
+                                          background: "Màn sao",
+                                          music: "Nhạc",
+                                        })[item] || item,
+                                    )
+                                    .join(" · ")
+                                : order.package_name || "—"}
+                            </td>
+                            <td className="px-4 py-4">
+                              <p className="text-sm font-bold text-slate-700">
+                                {order.expected_delivery_date
+                                  ? new Intl.DateTimeFormat("vi-VN", {
+                                      dateStyle: "medium",
+                                      timeZone: "UTC",
+                                    }).format(
+                                      new Date(
+                                        `${order.expected_delivery_date}T00:00:00Z`,
+                                      ),
+                                    )
+                                  : "Chưa đặt"}
+                              </p>
+                              <span
+                                className={`mt-1 inline-flex rounded-md px-2 py-1 text-[11px] font-extrabold ${deadline.className}`}
+                              >
+                                {deadline.label}
+                              </span>
+                            </td>
+                            <td className="py-4 pl-4">
+                              <span
+                                className={`rounded-lg px-2.5 py-1.5 text-xs font-extrabold ${statusStyles[order.status] || statusStyles.new}`}
+                              >
+                                {statusLabels[order.status] || "Mới nhận"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {!actionableOrders.length ? (
+                    <p className="py-10 text-center text-sm font-bold text-slate-400">
+                      Không có đơn cần xử lý trong nhóm này.
+                    </p>
+                  ) : null}
                 </div>
               </section>
+
+              <section className="mt-5 rounded-3xl border border-blue-100 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)] sm:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-extrabold uppercase tracking-wide text-slate-800">Xu hướng đơn hàng</p>
+                    <p className="mt-1 text-xs font-medium text-slate-500">Số lượng đơn theo thời gian và nguồn đơn</p>
+                  </div>
+                  <div className="flex flex-wrap gap-3"><div className="flex rounded-lg bg-slate-50 p-1">
+                    {[7, 30].map((days) => (
+                      <button
+                        className={`rounded-md px-3 py-1.5 text-xs font-extrabold ${orderTrendDays === days ? "bg-blue-50 text-blue-600 ring-1 ring-blue-200" : "text-slate-500"}`}
+                        key={days}
+                        onClick={() => setOrderTrendDays(days)}
+                        type="button"
+                      >
+                        {days} ngày
+                      </button>
+                    ))}
+                  </div><div className="flex rounded-lg bg-slate-50 p-1">{[["count", "Số lượng đơn"], ["value", "Giá trị đơn"]].map(([value, label]) => <button className={`rounded-md px-3 py-1.5 text-xs font-extrabold ${orderTrendMetric === value ? "bg-blue-50 text-blue-600 ring-1 ring-blue-200" : "text-slate-500"}`} key={value} onClick={() => setOrderTrendMetric(value)} type="button">{label}</button>)}</div></div>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-500">{trendSources.map((source) => <span className="inline-flex items-center gap-1.5" key={source.key}><i className={`size-2 rounded-full ${source.dot}`} />{source.label}</span>)}</div>
+                <div className="mt-2 grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]"><div className="min-w-0 overflow-x-auto"><svg aria-label="Biểu đồ xu hướng đơn hàng" className="h-56 min-w-[620px] w-full" role="img" viewBox="0 0 620 220"><g stroke="#e2e8f0" strokeWidth="1">{[30, 70, 110, 150, 190].map((y) => <line key={y} x1="40" x2="605" y1={y} y2={y} />)}</g>{[0, 1, 2, 3, 4].map((tick) => <text fill="#94a3b8" fontSize="10" key={tick} textAnchor="end" x="31" y={193 - tick * 40}>{Math.round((highestOrderTrend / 4) * tick)}</text>)}{trendSources.map((source) => { const points = orderTrend.map((item, index) => { const x = 42 + (index * 560) / Math.max(orderTrend.length - 1, 1); const y = 190 - (item[source.key] / highestOrderTrend) * 155; return `${x},${y}`; }).join(" "); return <g key={source.key}><polyline fill="none" points={points} stroke={source.color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />{orderTrend.map((item, index) => { const x = 42 + (index * 560) / Math.max(orderTrend.length - 1, 1); const y = 190 - (item[source.key] / highestOrderTrend) * 155; return <g key={`${source.key}-${item.key}`}><circle cx={x} cy={y} fill="white" r="3" stroke={source.color} strokeWidth="2" />{item[source.key] ? <text fill={source.color} fontSize="10" fontWeight="700" textAnchor="middle" x={x} y={y - 9}>{orderTrendMetric === "value" ? `${Math.round(item[source.key] / 1000)}k` : item[source.key]}</text> : null}</g>; })}</g>; })}{orderTrend.map((item, index) => <text fill="#64748b" fontSize="10" fontWeight="600" key={item.key} textAnchor="middle" x={42 + (index * 560) / Math.max(orderTrend.length - 1, 1)} y="212">{item.label}</text>)}</svg></div><aside className="rounded-xl border border-slate-100 bg-slate-50/70 p-4"><div className="flex items-center gap-4"><div className="relative grid size-17 place-items-center rounded-full" style={{ background: `conic-gradient(${donutStops})` }}><span className="grid size-11 place-items-center rounded-full bg-white text-xs font-extrabold text-slate-700">{sourceOrderTotal}</span></div><div><p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">Tổng {orderTrendDays} ngày qua</p><p className="mt-1 text-sm font-extrabold text-slate-800">Phân bổ nguồn đơn</p></div></div><div className="mt-4 space-y-3">{sourcePercentages.map((source) => <div className="flex items-center justify-between text-xs" key={source.key}><span className="flex items-center gap-2 font-bold text-slate-600"><i className={`size-2 rounded-full ${source.dot}`} />{source.label}</span><span className="font-extrabold text-slate-800">{source.value} <span className="font-medium text-slate-400">đơn</span> <b className="ml-2 text-blue-600">{source.percent}%</b></span></div>)}</div><div className="mt-4 grid grid-cols-2 border-t border-slate-200 pt-3 text-xs"><div><p className="font-medium text-slate-400">Tổng số đơn</p><strong className="mt-1 block text-base text-slate-800">{sourceOrderTotal} đơn</strong></div><div className="border-l border-slate-200 pl-4"><p className="font-medium text-slate-400">Tổng giá trị đơn</p><strong className="mt-1 block text-base text-slate-800">{sourceOrderValue.toLocaleString("vi-VN")}đ</strong></div></div></aside></div>
+              </section>
+              {false ? (
+                <>
+                  <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="relative overflow-hidden rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)]">
+                      <span className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-[#E54153]">
+                        <CalendarHeart size={26} />
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-slate-500">
+                          Thiệp cưới
+                        </p>
+                        <p className="mt-1 text-2xl font-extrabold">
+                          {templateLibraryCount}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Mẫu đang hiển thị
+                        </p>
+                      </div>
+                    </div>
+                    <div className="relative overflow-hidden rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)]">
+                      <span className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-[#E54153]">
+                        <Music size={26} />
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-slate-500">
+                          Nhạc cưới
+                        </p>
+                        <p className="mt-1 text-2xl font-extrabold">
+                          {musicCount}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Bài nhạc đã lưu
+                        </p>
+                      </div>
+                    </div>
+                    <div className="relative overflow-hidden rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)]">
+                      <span className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-[#E54153]">
+                        <Sparkles size={26} />
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-slate-500">
+                          Màn sao băng
+                        </p>
+                        <p className="mt-1 text-2xl font-extrabold">
+                          {backgroundLibraryCount}
+                        </p>
+                        <p className="text-xs text-slate-400">Mẫu background</p>
+                      </div>
+                    </div>
+                    <div className="relative overflow-hidden rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)]">
+                      <span className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-[#E54153]">
+                        <Video size={26} />
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-slate-500">
+                          Slide cưới
+                        </p>
+                        <p className="mt-1 text-2xl font-extrabold">
+                          {slideLibraryCount}
+                        </p>
+                        <p className="text-xs text-slate-400">Mẫu slide</p>
+                      </div>
+                    </div>
+                  </div>
+                  <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(290px,0.55fr)]">
+                    <div className="rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)] sm:p-6">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#E54153]">
+                            Tương tác khách hàng
+                          </p>
+                          <h2 className="mt-1 text-xl font-extrabold text-slate-900">
+                            Lượt nhấp xem mẫu
+                          </h2>
+                        </div>
+                        <label className="inline-flex items-center gap-2 rounded-xl border border-rose-100 bg-white px-3 py-2 text-xs font-extrabold text-slate-600">
+                          <CalendarDays className="text-[#E54153]" size={15} />
+                          <select
+                            className="appearance-none border-0 bg-transparent p-0 pr-4 text-xs font-extrabold outline-none"
+                            value={rangeDays}
+                            onChange={(event) =>
+                              setRangeDays(Number(event.target.value))
+                            }
+                          >
+                            <option value={7}>7 ngày qua</option>
+                            <option value={30}>30 ngày qua</option>
+                            <option value={90}>90 ngày qua</option>
+                          </select>
+                          <ChevronDown
+                            className="-ml-5 pointer-events-none"
+                            size={14}
+                          />
+                        </label>
+                      </div>
+                      <div className="mt-5 overflow-x-auto">
+                        <svg
+                          className="h-60 min-w-[620px] w-full"
+                          viewBox="0 0 700 220"
+                          role="img"
+                          aria-label="Biểu đồ lượt nhấp 7 ngày qua"
+                        >
+                          {[50, 90, 130, 170].map((y) => (
+                            <line
+                              key={y}
+                              x1="40"
+                              x2="660"
+                              y1={y}
+                              y2={y}
+                              stroke="#e6eff8"
+                              strokeWidth="1"
+                            />
+                          ))}
+                          <polygon points={chartArea} fill="url(#click-fill)" />
+                          <polyline
+                            points={chartPoints}
+                            fill="none"
+                            stroke="#2563eb"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="4"
+                          />
+                          {chartDays.map((item, index) => {
+                            const [x, y] = chartPoints
+                              .split(" ")
+                              [index].split(",");
+                            const showLabel =
+                              index === 0 ||
+                              index === chartDays.length - 1 ||
+                              index % chartLabelStep === 0;
+                            return (
+                              <g key={item.key}>
+                                <circle
+                                  cx={x}
+                                  cy={y}
+                                  fill="#fff"
+                                  r="6"
+                                  stroke="#2563eb"
+                                  strokeWidth="3"
+                                />
+                                {showLabel ? (
+                                  <text
+                                    x={x}
+                                    y="207"
+                                    textAnchor="middle"
+                                    fill="#71839a"
+                                    fontSize="11"
+                                    fontWeight="700"
+                                  >
+                                    {item.label}
+                                  </text>
+                                ) : null}
+                              </g>
+                            );
+                          })}
+                          <defs>
+                            <linearGradient
+                              id="click-fill"
+                              x1="0"
+                              x2="0"
+                              y1="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="0%"
+                                stopColor="#2563eb"
+                                stopOpacity="0.22"
+                              />
+                              <stop
+                                offset="100%"
+                                stopColor="#2563eb"
+                                stopOpacity="0"
+                              />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                      </div>
+                      <div className="mt-2 grid grid-cols-3 divide-x divide-slate-100 rounded-2xl bg-slate-50/70 p-3">
+                        {clickComparison.map((item) => (
+                          <div className="px-3" key={item.label}>
+                            <p className="text-xs font-bold text-slate-500">
+                              {item.label}
+                            </p>
+                            <p className="mt-1 text-xl font-extrabold text-slate-900">
+                              {item.value}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <aside className="rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)] sm:p-6">
+                      <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#E54153]">
+                        Phân bổ nội dung
+                      </p>
+                      <div className="mt-5 flex items-center gap-5">
+                        <div
+                          className="grid size-28 shrink-0 place-items-center rounded-full"
+                          style={{
+                            background: `conic-gradient(#2563eb 0 ${templateShare}%, #0ea5e9 ${templateShare}% ${templateShare + musicShare}%, #38bdf8 ${templateShare + musicShare}% ${templateShare + musicShare + backgroundShare}%, #7dd3fc ${templateShare + musicShare + backgroundShare}% 100%)`,
+                          }}
+                        >
+                          <div className="grid size-20 place-items-center rounded-full bg-white text-center">
+                            <strong className="text-xl text-slate-900">
+                              {totalContent}
+                            </strong>
+                            <span className="-mt-2 text-[10px] font-bold text-slate-400">
+                              TỔNG
+                            </span>
+                          </div>
+                        </div>
+                        <div className="grid gap-2 text-xs font-bold text-slate-600">
+                          {contentStats.map((item) => (
+                            <div
+                              className="flex items-center gap-2"
+                              key={item.label}
+                            >
+                              <span
+                                className="size-2.5 rounded-full"
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span>{item.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="mt-5 border-t border-slate-100 pt-4 text-sm leading-6 text-slate-500">
+                        Biểu đồ lượt nhấp bắt đầu ghi nhận sau khi tính năng
+                        được bật.
+                      </p>
+                    </aside>
+                  </section>
+                  <section className="mt-5 grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
+                    <div className="rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)] sm:p-6">
+                      <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#E54153]">
+                        So sánh lượt xem
+                      </p>
+                      <div className="mt-5 grid gap-3">
+                        {[
+                          { label: "Hôm nay", value: periodClicks.today },
+                          { label: "7 ngày qua", value: periodClicks.week },
+                          { label: "30 ngày qua", value: periodClicks.month },
+                        ].map((item) => (
+                          <div
+                            className="flex items-center justify-between rounded-2xl bg-rose-50/50 px-4 py-3"
+                            key={item.label}
+                          >
+                            <span className="text-sm font-bold text-slate-600">
+                              {item.label}
+                            </span>
+                            <strong className="text-2xl text-slate-900">
+                              {item.value}
+                            </strong>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-4 text-xs leading-5 text-slate-500">
+                        Lượt nhấp được tính từ khách mở mẫu trên website.
+                      </p>
+                    </div>
+                    <div className="rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)] sm:p-6">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#E54153]">
+                            Top mẫu được xem
+                          </p>
+                          <h2 className="mt-1 text-xl font-extrabold text-slate-900">
+                            Top 10 trong 30 ngày
+                          </h2>
+                        </div>
+                        <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-extrabold text-[#E54153]">
+                          {topTemplates.length} mẫu
+                        </span>
+                      </div>
+                      {topTemplates.length ? (
+                        <ol className="mt-4 grid divide-y divide-slate-100">
+                          {topTemplates.map((item, index) => (
+                            <li
+                              className="flex items-center gap-3 py-3"
+                              key={item.key}
+                            >
+                              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-rose-50 text-sm font-extrabold text-[#E54153]">
+                                {index + 1}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-extrabold text-slate-800">
+                                  {item.name}
+                                </p>
+                                <p className="mt-0.5 text-xs text-slate-500">
+                                  {item.category === "wedding"
+                                    ? "Thiệp cưới"
+                                    : item.category === "video"
+                                      ? "Slide cưới"
+                                      : "Màn sao băng"}
+                                </p>
+                              </div>
+                              <strong className="text-sm text-slate-900">
+                                {item.clicks} lượt
+                              </strong>
+                            </li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <div className="mt-4 rounded-2xl bg-rose-50/50 p-6 text-center text-sm font-bold text-slate-500">
+                          Chưa có lượt xem theo từng mẫu.
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                  <section className="mt-5 rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)] sm:p-6">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#E54153]">
+                          Thao tác nhanh
+                        </p>
+                        <h2 className="mt-1 text-xl font-extrabold text-slate-900">
+                          Cập nhật thư viện
+                        </h2>
+                      </div>
+                    </div>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      {[
+                        {
+                          label: "Thêm thiệp cưới",
+                          href: "/admin/templates",
+                          icon: CalendarHeart,
+                        },
+                        {
+                          label: "Thêm nhạc cưới",
+                          href: "/admin/music",
+                          icon: Music,
+                        },
+                        {
+                          label: "Thêm màn sao băng",
+                          href: "/admin/backgrounds",
+                          icon: Sparkles,
+                        },
+                        {
+                          label: "Thêm slide cưới",
+                          href: "/admin/slides",
+                          icon: Video,
+                        },
+                      ].map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <a
+                            className="group flex items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50/40 p-4 transition hover:-translate-y-0.5 hover:border-rose-300"
+                            href={item.href}
+                            key={item.href}
+                          >
+                            <span className="grid size-10 place-items-center rounded-xl bg-white text-[#E54153] shadow-sm">
+                              <Icon size={20} />
+                            </span>
+                            <span className="min-w-0 flex-1 text-sm font-extrabold text-slate-800">
+                              {item.label}
+                            </span>
+                            <Plus
+                              className="text-[#E54153] transition group-hover:rotate-90"
+                              size={18}
+                            />
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </>
+              ) : null}
               <footer className="py-7 text-center text-xs font-medium text-slate-400">
                 © 2026 Zenlove Wedding. All rights reserved.
               </footer>
