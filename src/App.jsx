@@ -6,7 +6,6 @@ import Hero from "./components/landing/Hero.jsx";
 import Services from "./components/landing/Services.jsx";
 import DemoShowcase from "./components/landing/DemoShowcase.jsx";
 import Pricing from "./components/landing/Pricing.jsx";
-import WhyChoose from "./components/landing/WhyChoose.jsx";
 import Process from "./components/landing/Process.jsx";
 import Feedback from "./components/landing/Feedback.jsx";
 import FAQ from "./components/landing/FAQ.jsx";
@@ -58,9 +57,8 @@ function App() {
           onSelectDemoCategory={setActiveDemoCategory}
         />
         <DemoShowcase activeCategory={activeDemoCategory} />
-        <MusicPlanner />
         <Pricing />
-        <WhyChoose />
+        <MusicPlanner />
         <Process />
         <Feedback />
         <FAQ />
