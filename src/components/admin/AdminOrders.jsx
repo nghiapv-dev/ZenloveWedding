@@ -941,12 +941,12 @@ function AdminOrders({ scope = "customer" }) {
                   <th className="w-[5%] px-5 py-4">STT</th>
                   <th className="w-[17%] px-5 py-4">Tên cô dâu & chú rể</th>
                   <th className="w-[10%] px-5 py-4">Ngày cưới</th>
-                  <th className="w-[24%] px-5 py-4">Loại dịch vụ</th>
+                  <th className="w-[18%] px-5 py-4">Loại dịch vụ</th>
                   <th className="w-[10%] px-5 py-4">Ngày bàn giao</th>
                   <th className="w-[7%] px-5 py-4 text-right">Tiền cọc</th>
                   <th className="w-[8%] px-5 py-4 text-right">Tổng tiền</th>
                   <th className="w-[10%] px-5 py-4">Trạng thái</th>
-                  <th className="w-[12%] px-5 py-4">Ghi chú</th>
+                  <th className="w-[10%] px-5 py-4">Ghi chú</th>
                   <th className="w-[5%] px-5 py-4 text-center">Thao tác</th>
                 </tr>
               )}
@@ -1057,7 +1057,7 @@ function AdminOrders({ scope = "customer" }) {
                         <button
                           aria-expanded={activeStatusMenu === order.id}
                           aria-label={`Đổi trạng thái đơn của ${order.bride_name} và ${order.groom_name}`}
-                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition hover:brightness-95 ${statusStyles[order.status] || statusStyles.new}`}
+                          className={`inline-flex min-w-[112px] items-center justify-between gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition hover:brightness-95 ${statusStyles[order.status] || statusStyles.new}`}
                           onClick={() =>
                             setActiveStatusMenu(
                               activeStatusMenu === order.id ? null : order.id,

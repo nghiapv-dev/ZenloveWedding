@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, Link2 } from "lucide-react";
+import { ExternalLink, Link2, Play, X } from "lucide-react";
 import { serviceDemoSections } from "../../data/siteData.jsx";
 import ImageModal from "../shared/ImageModal.jsx";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
@@ -10,9 +10,24 @@ function normalizeZenLovePreviewUrl(url, slug) {
   return url.replace("https://zenlove.me/templates/", "https://zenlove.me/template-preview/");
 }
 
+function videoEmbedUrl(url) {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.includes("youtu.be"))
+      return `https://www.youtube-nocookie.com/embed/${parsed.pathname.slice(1)}?autoplay=1&rel=0`;
+    if (parsed.hostname.includes("youtube.com")) {
+      const id = parsed.searchParams.get("v") || parsed.pathname.split("/").filter(Boolean).pop();
+      return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0` : url;
+    }
+  } catch { return url; }
+  return url;
+}
+
 function DemoShowcase({ activeCategory }) {
   const activeSection = activeCategory ? serviceDemoSections[activeCategory] : null;
   const [previewImage, setPreviewImage] = useState(null);
+  const [previewVideo, setPreviewVideo] = useState(null);
   const [activeImageKey, setActiveImageKey] = useState(null);
   const [cloudWeddingTemplates, setCloudWeddingTemplates] = useState(null);
   const [cloudShowcases, setCloudShowcases] = useState({ background: [], slide: [] });
@@ -152,6 +167,7 @@ function DemoShowcase({ activeCategory }) {
                           activeCategory === "wedding" && cloudWeddingTemplates?.length
                             ? `Mẫu ${itemIndex + 1}`
                             : item.title;
+                        const canWatchInline = ["video", "background"].includes(activeCategory) && Boolean(item.url);
                         if (item.image) {
                           const imageKey = `${group.title}-${displayTitle}`;
                           const isActiveImage = activeImageKey === imageKey;
@@ -164,6 +180,12 @@ function DemoShowcase({ activeCategory }) {
                               target={item.url ? "_blank" : undefined}
                               rel={item.url ? "noreferrer" : undefined}
                               onClick={(event) => {
+                                if (canWatchInline) {
+                                  event.preventDefault();
+                                  trackTemplateClick(activeCategory, item);
+                                  setPreviewVideo({ title: displayTitle, url: videoEmbedUrl(item.url) });
+                                  return;
+                                }
                                 const isTouchDevice = window.matchMedia(
                                   "(hover: none), (pointer: coarse)",
                                 ).matches;
@@ -212,7 +234,7 @@ function DemoShowcase({ activeCategory }) {
                                     isActiveImage ? "opacity-100" : "opacity-0"
                                   }`}
                                 >
-                                  {displayedSection.ctaLabel || "Xem mẫu"}
+                                  {canWatchInline ? <><Play size={15} fill="currentColor" /> Xem ngay</> : displayedSection.ctaLabel || "Xem mẫu"}
                                 </span>
                               </div>
                             </a>
@@ -227,6 +249,12 @@ function DemoShowcase({ activeCategory }) {
                               target="_blank"
                               rel="noreferrer"
                               key={`${group.title}-${displayTitle}`}
+                              onClick={(event) => {
+                                if (!canWatchInline) return;
+                                event.preventDefault();
+                                trackTemplateClick(activeCategory, item);
+                                setPreviewVideo({ title: displayTitle, url: videoEmbedUrl(item.url) });
+                              }}
                             >
                               <span>{displayTitle}</span>
                               <ExternalLink
@@ -258,6 +286,29 @@ function DemoShowcase({ activeCategory }) {
         )}
       </div>
       <ImageModal image={previewImage} onClose={() => setPreviewImage(null)} />
+      {previewVideo ? (
+        <div
+          className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/80 p-4"
+          onClick={() => setPreviewVideo(null)}
+          role="presentation"
+        >
+          <div
+            aria-label={`Xem ${previewVideo.title}`}
+            aria-modal="true"
+            className="w-full max-w-5xl overflow-hidden rounded-2xl bg-black shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+          >
+            <div className="flex items-center justify-between bg-white px-4 py-3">
+              <strong className="text-sm text-slate-900 sm:text-base">{previewVideo.title}</strong>
+              <button aria-label="Đóng video" className="grid size-9 place-items-center rounded-full text-slate-600 transition hover:bg-slate-100" onClick={() => setPreviewVideo(null)} type="button"><X size={20} /></button>
+            </div>
+            <div className="aspect-video">
+              <iframe allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen className="h-full w-full" src={previewVideo.url} title={previewVideo.title} />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

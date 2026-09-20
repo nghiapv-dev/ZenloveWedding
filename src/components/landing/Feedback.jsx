@@ -1,11 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
-import { MessageCircleHeart, Send, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Flag,
+  MessageCircleHeart,
+  Send,
+  Star,
+} from "lucide-react";
 import { sectionClass } from "../../constants/styles.js";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
 
 const RATE_LIMIT_KEY = "zenlove-review-last-submission";
+const PAGE_SIZE = 4;
 
-function RatingStars({ value, onChange, interactive = false }) {
+function RatingStars({ value, onChange, interactive = false, size = 18 }) {
   return (
     <div className="flex items-center gap-1" aria-label={`${value} trên 5 sao`}>
       {[1, 2, 3, 4, 5].map((star) => (
@@ -17,21 +25,33 @@ function RatingStars({ value, onChange, interactive = false }) {
           onClick={() => onChange?.(star)}
           type="button"
         >
-          <Star fill="currentColor" size={interactive ? 26 : 16} />
+          <Star fill="currentColor" size={size} />
         </button>
       ))}
     </div>
   );
 }
 
+function initials(name) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
 function Feedback() {
   const [reviews, setReviews] = useState([]);
+  const [page, setPage] = useState(0);
   const [name, setName] = useState("");
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState("");
   const [website, setWebsite] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const loadReviews = async () => {
     if (!isSupabaseConfigured) return;
@@ -46,14 +66,20 @@ function Feedback() {
   useEffect(() => {
     loadReviews();
   }, []);
-  const average = useMemo(
-    () =>
-      reviews.length
-        ? reviews.reduce((total, review) => total + review.rating, 0) /
-          reviews.length
-        : 0,
-    [reviews],
+
+  const pageCount = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
+  const visibleReviews = reviews.slice(
+    page * PAGE_SIZE,
+    page * PAGE_SIZE + PAGE_SIZE,
   );
+  const goToPage = (direction) =>
+    setPage((current) => (current + direction + pageCount) % pageCount);
+
+  useEffect(() => {
+    if (pageCount <= 1) return undefined;
+    const timer = window.setInterval(() => goToPage(1), 5000);
+    return () => window.clearInterval(timer);
+  }, [pageCount]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -75,6 +101,7 @@ function Feedback() {
     if (error) return setMessage("Chưa thể gửi đánh giá. Vui lòng thử lại.");
     localStorage.setItem(RATE_LIMIT_KEY, String(Date.now()));
     setReviews((current) => [data, ...current]);
+    setPage(0);
     setName("");
     setContent("");
     setRating(5);
@@ -82,88 +109,127 @@ function Feedback() {
   };
 
   return (
-    <section
-      className={`${sectionClass} bg-gradient-to-b from-white to-rose-50/45`}
-      id="feedback"
-    >
-      <div className="mx-auto max-w-6xl">
+    <section className={`${sectionClass} bg-[#f7f7f6]`} id="feedback">
+      <div className="mx-auto max-w-7xl">
         <div className="text-center">
-          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-500">
+          <span className="mx-auto block h-0.5 w-28 bg-red-900" />
+          <p className="mt-5 font-serif text-3xl font-semibold uppercase tracking-[0.035em] text-[#ff6148] sm:text-4xl">
             Đánh giá khách hàng
           </p>
-          <h2 className="mt-2 text-2xl font-extrabold text-slate-950 sm:text-3xl">
-            Khách hàng nói gì về ZenLove Wedding?
-          </h2>
+          <p className="mt-3 text-sm text-slate-500">
+            Những chia sẻ chân thật từ các cặp đôi đã chọn ZenLove Wedding
+          </p>
         </div>
-        <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1fr)_350px]">
-          <div>
-            {reviews.length ? (
-              <>
-                <div className="mb-4 flex items-center gap-3">
-                  <strong className="text-3xl text-slate-900">
-                    {average.toFixed(1)}
-                  </strong>
-                  <RatingStars value={Math.round(average)} />
-                  <span className="text-sm font-medium text-slate-500">
-                    {reviews.length} đánh giá
-                  </span>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {reviews.map((review) => (
-                    <article
-                      className="rounded-2xl border border-rose-100 bg-white p-4 shadow-[0_10px_24px_rgba(229,65,83,0.06)]"
-                      key={review.id}
-                    >
-                      <RatingStars value={review.rating} />
-                      <p className="mt-3 text-sm leading-6 text-slate-600">
-                        “{review.content}”
-                      </p>
-                      <p className="mt-4 text-sm font-extrabold text-slate-800">
-                        {review.display_name}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-400">
-                        {new Intl.DateTimeFormat("vi-VN", {
-                          month: "long",
-                          year: "numeric",
-                        }).format(new Date(review.created_at))}
-                      </p>
-                    </article>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="grid min-h-52 place-items-center rounded-2xl border border-dashed border-rose-200 bg-white p-6 text-center">
-                <MessageCircleHeart className="text-rose-400" size={32} />
-                <p className="mt-3 font-extrabold text-slate-700">
-                  Hãy là người đầu tiên chia sẻ trải nghiệm.
-                </p>
-              </div>
-            )}
+
+        {reviews.length ? (
+          <div className="relative mt-9 px-7 sm:px-10">
+            <button
+              aria-label="Xem đánh giá trước"
+              className="absolute left-0 top-1/2 z-10 grid size-9 -translate-y-1/2 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-red-300 hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-30"
+              disabled={pageCount === 1}
+              onClick={() => goToPage(-1)}
+              type="button"
+            >
+              <ChevronLeft size={22} />
+            </button>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {visibleReviews.map((review, index) => (
+                <article
+                  className="flex min-h-[330px] flex-col rounded-xl border border-slate-300 bg-white px-5 py-5 shadow-[0_2px_3px_rgba(15,23,42,0.02)]"
+                  key={review.id}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <Flag
+                      className="fill-red-900 text-red-900"
+                      size={35}
+                      strokeWidth={1.8}
+                    />
+                    <RatingStars size={20} value={review.rating} />
+                  </div>
+                  <p className="mt-6 line-clamp-6 text-[15px] leading-6 text-slate-800">
+                    {review.content}
+                  </p>
+                  <div className="mt-auto border-t border-slate-400 pt-5">
+                    <div className="flex items-center gap-4">
+                      <span
+                        className={`grid size-12 shrink-0 place-items-center rounded-full text-sm font-extrabold text-white ${["bg-rose-400", "bg-amber-400", "bg-violet-400", "bg-sky-500"][index % 4]}`}
+                      >
+                        {initials(review.display_name)}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-extrabold text-slate-950">
+                         Khách hàng: {review.display_name}
+                        </p>
+                      
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <button
+              aria-label="Xem đánh giá tiếp theo"
+              className="absolute right-0 top-1/2 z-10 grid size-9 -translate-y-1/2 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-red-300 hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-30"
+              disabled={pageCount === 1}
+              onClick={() => goToPage(1)}
+              type="button"
+            >
+              <ChevronRight size={22} />
+            </button>
           </div>
+        ) : (
+          <div className="mt-9 grid min-h-56 place-items-center rounded-xl border border-dashed border-rose-200 bg-white p-6 text-center">
+            <div>
+              <MessageCircleHeart className="mx-auto text-rose-400" size={32} />
+              <p className="mt-3 font-extrabold text-slate-700">
+                Hãy là người đầu tiên chia sẻ trải nghiệm.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-[5px] text-center">
+          <button
+            className="cursor-pointer text-sm font-extrabold text-rose-600 underline decoration-rose-300 underline-offset-4 transition hover:text-rose-800"
+            onClick={() => setIsFormOpen((current) => !current)}
+            type="button"
+          >
+            {isFormOpen ? "Ẩn form đánh giá" : "Đánh giá tại đây"}
+          </button>
+        </div>
+
+        {isFormOpen ? (
           <form
-            className="h-fit rounded-3xl border border-rose-100 bg-white p-5 shadow-[0_12px_30px_rgba(229,65,83,0.08)]"
+            className="mx-auto mt-[5px] max-w-2xl rounded-2xl border border-rose-100 bg-white p-5 shadow-[0_12px_30px_rgba(229,65,83,0.06)] sm:p-7"
             onSubmit={submit}
           >
-            <h3 className="text-lg font-extrabold text-slate-900">
+            <h3 className="text-center text-xl font-extrabold text-slate-900">
               Gửi đánh giá của bạn
             </h3>
-            <label className="mt-5 block text-sm font-bold text-slate-700">
-              Tên hiển thị
-              <input
-                className="mt-2 h-11 w-full rounded-xl border border-rose-100 bg-rose-50/30 px-3 outline-none focus:border-rose-400"
-                maxLength="80"
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Ví dụ: Minh Anh"
-                required
-                value={name}
-              />
-            </label>
-            <div className="mt-4">
-              <p className="text-sm font-bold text-slate-700">
-                Mức độ hài lòng
-              </p>
-              <div className="mt-2">
-                <RatingStars interactive onChange={setRating} value={rating} />
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-bold text-slate-700">
+                Tên hiển thị
+                <input
+                  className="mt-2 h-11 w-full rounded-xl border border-rose-100 bg-rose-50/30 px-3 outline-none focus:border-rose-400"
+                  maxLength="80"
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Tên của bạn"
+                  required
+                  value={name}
+                />
+              </label>
+              <div>
+                <p className="text-sm font-bold text-slate-700">
+                  Mức độ hài lòng
+                </p>
+                <div className="mt-3">
+                  <RatingStars
+                    interactive
+                    onChange={setRating}
+                    size={25}
+                    value={rating}
+                  />
+                </div>
               </div>
             </div>
             <label className="mt-4 block text-sm font-bold text-slate-700">
@@ -187,12 +253,11 @@ function Feedback() {
               value={website}
             />
             <button
-              className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-rose-500 text-sm font-extrabold text-white transition hover:bg-rose-600 disabled:opacity-60"
+              className="mt-5 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-rose-500 text-sm font-extrabold text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={submitting}
               type="submit"
             >
-              <Send size={16} />
-              {submitting ? "Đang gửi..." : "Gửi đánh giá"}
+              <Send size={16} /> {submitting ? "Đang gửi..." : "Gửi đánh giá"}
             </button>
             {message ? (
               <p
@@ -202,7 +267,7 @@ function Feedback() {
               </p>
             ) : null}
           </form>
-        </div>
+        ) : null}
       </div>
     </section>
   );

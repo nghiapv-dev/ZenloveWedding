@@ -38,10 +38,10 @@ export const services = [
     icon: Sparkles,
   },
   {
-    title: "Thiết kế theo yêu cầu",
-    price: "300K",
+    title: "Combo độc quyền Nhà trai & Nhà gái",
+    price: "699K",
     cta: "Tư vấn",
-    icon: Palette,
+    icon: Heart,
   },
   {
     title: "Combo Premium",

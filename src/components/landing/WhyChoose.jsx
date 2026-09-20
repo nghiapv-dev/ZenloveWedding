@@ -9,7 +9,7 @@ function WhyChoose() {
         eyebrow="Vì sao chọn Zenlove wedding"
         title="Đồng hành cùng bạn trong từng khoảnh khắc"
       />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-2 lg:grid-cols-3 lg:gap-4">
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-3 md:grid-cols-2 lg:grid-cols-3 lg:gap-4">
         {whyItems.map(([title, Icon]) => (
           <article className={`${cardClass} grid justify-items-center gap-2 p-4 text-center sm:gap-3 sm:p-6`} key={title}>
             <Icon className="size-10 rounded-2xl bg-rose-50 p-2.5 text-rose-500 sm:size-12 sm:p-3" />

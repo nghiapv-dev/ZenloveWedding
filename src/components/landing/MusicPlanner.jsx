@@ -1,374 +1,131 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronUp, ClipboardList, Music, Plus, RotateCcw, Sparkles, Trash2 } from "lucide-react";
+import { BadgeCheck, CakeSlice, Check, ClipboardList, Download, GripVertical, Heart, Music2, PartyPopper, Plus, RefreshCw, Sparkles, Trophy, UserRound, UsersRound } from "lucide-react";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
-import { cardClass, sectionClass } from "../../constants/styles.js";
-import SectionHeading from "../shared/SectionHeading.jsx";
+import { sectionClass } from "../../constants/styles.js";
 
-const ceremonySections = [
-  { id: "welcome", label: "Nhạc đón khách", category: "Nhạc đón khách" },
-  { id: "mc", label: "Nhạc MC giới thiệu", category: "Nhạc MC giới thiệu" },
-  { id: "groom", label: "Chú rể lên sân khấu", category: "Nhạc chú rể lên sk" },
-  {
-    id: "couple",
-    label: "Cô dâu chú rể lên sân khấu",
-    category: "Nhạc cô dâu chú rể lên sk",
-  },
-  { id: "parents", label: "Ba mẹ lên sân khấu", category: "Ba mẹ lên sk" },
-  { id: "rings", label: "Trao nhẫn", category: "Nhạc trao nhẫn" },
-  {
-    id: "cake",
-    label: "Cắt bánh & rót rượu",
-    category: "Nhạc cắt bánh & rót rượu",
-  },
-  { id: "toast", label: "Dâng rượu ba mẹ", category: "Dâng rượu ba mẹ" },
-  { id: "opening", label: "Khai tiệc", category: "Nhạc khai tiệc" },
+const moments = [
+  { id: "welcome", label: "Nhạc đón khách", desc: "Tạo không khí ấm cúng ngay từ đầu", category: "Nhạc đón khách", icon: UsersRound },
+  { id: "mc", label: "Nhạc MC giới thiệu", desc: "Trang trọng, cuốn hút", category: "Nhạc MC giới thiệu", icon: Music2 },
+  { id: "couple", label: "Cô dâu chú rể lên sân khấu", desc: "Khoảnh khắc đáng nhớ", category: "Nhạc cô dâu chú rể lên sk", icon: Heart },
+  { id: "rings", label: "Trao nhẫn", desc: "Lãng mạn, cảm xúc", category: "Nhạc trao nhẫn", icon: Trophy },
+  { id: "cake", label: "Cắt bánh & rót rượu", desc: "Vui tươi, rộn ràng", category: "Nhạc cắt bánh & rót rượu", icon: CakeSlice },
+  { id: "toast", label: "Dâng rượu ba mẹ", desc: "Trang trọng, ý nghĩa", category: "Dâng rượu ba mẹ", icon: UserRound },
+  { id: "opening", label: "Khai tiệc", desc: "Sôi động, vui vẻ", category: "Nhạc khai tiệc", icon: PartyPopper },
+  { id: "groom", label: "Chú rể lên sân khấu", desc: "Tự tin, nổi bật", category: "Nhạc chú rể lên sk", icon: Sparkles },
 ];
-
-const defaultSectionIds = [
-  "welcome",
-  "mc",
-  "groom",
-  "couple",
-  "parents",
-  "cake",
-  "opening",
-];
+const defaultMomentIds = ["welcome", "couple", "rings", "cake", "opening"];
 
 function normalize(value) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
-const categoryKeywords = {
-  welcome: ["don khach"],
-  mc: ["mc", "gioi thieu"],
-  groom: ["chu re"],
-  couple: ["co dau chu re"],
-  parents: ["ba me len"],
-  rings: ["trao nhan"],
-  cake: ["cat banh", "rot ruou"],
-  toast: ["dang ruou"],
-  opening: ["khai tiec"],
-};
-
-function belongsToSection(song, section) {
+function hasSongForMoment(song, moment) {
+  if (!moment.category) return true;
   const category = normalize(song.category || "");
-  if (section.id === "groom" && category.includes("co dau")) return false;
-  return category === normalize(section.category) || (categoryKeywords[section.id] || []).some((keyword) => category.includes(keyword));
+  const expected = normalize(moment.category);
+  if (moment.id === "groom" && category.includes("co dau")) return false;
+  return category === expected || category.includes(expected.replace("nhac ", ""));
 }
 
 function MusicPlanner() {
   const [songs, setSongs] = useState([]);
-  const [selectedIds, setSelectedIds] = useState(defaultSectionIds);
-  const [customSections, setCustomSections] = useState([]);
-  const [customSectionName, setCustomSectionName] = useState("");
-  const [isAddingSection, setIsAddingSection] = useState(false);
-  const [suggestions, setSuggestions] = useState(null);
-  const [addQueries, setAddQueries] = useState({});
+  const [selectedIds, setSelectedIds] = useState(defaultMomentIds);
+  const [playlist, setPlaylist] = useState(null);
   const [status, setStatus] = useState("loading");
   const [copied, setCopied] = useState(false);
+  const [step, setStep] = useState(1);
+  const [customMoments, setCustomMoments] = useState([]);
+  const [customMomentName, setCustomMomentName] = useState("");
+  const [addingMoment, setAddingMoment] = useState(false);
+  const [draggingMomentId, setDraggingMomentId] = useState(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
       setStatus("unavailable");
       return undefined;
     }
-
-    let mounted = true;
+    let alive = true;
     supabase.rpc("get_music_suggestions").then(({ data, error }) => {
-      if (!mounted) return;
-      if (error) {
-        setStatus("unavailable");
-        return;
-      }
+      if (!alive) return;
+      if (error) return setStatus("unavailable");
       setSongs(data || []);
       setStatus("ready");
     });
-
-    return () => {
-      mounted = false;
-    };
+    return () => { alive = false; };
   }, []);
 
-  const allSections = useMemo(() => [...ceremonySections, ...customSections], [customSections]);
-  const selectedSections = useMemo(() => selectedIds.map((id) => allSections.find((section) => section.id === id)).filter(Boolean), [allSections, selectedIds]);
-
-  const toggleSection = (id) => {
-    setSelectedIds((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id],
-    );
+  const allMoments = useMemo(() => [...moments, ...customMoments], [customMoments]);
+  const selectedMoments = useMemo(() => allMoments.filter((moment) => selectedIds.includes(moment.id)), [allMoments, selectedIds]);
+  const orderedMoments = useMemo(() => [...selectedMoments, ...allMoments.filter((moment) => !selectedIds.includes(moment.id))], [allMoments, selectedIds, selectedMoments]);
+  const toggleMoment = (id) => {
+    setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+    setPlaylist(null);
+    setCopied(false);
+    setStep(1);
   };
-
-  const addCustomSection = () => {
-    const label = customSectionName.trim();
+  const addCustomMoment = () => {
+    const label = customMomentName.trim();
     if (!label) return;
     const id = `custom-${Date.now()}`;
-    setCustomSections((current) => [...current, { id, label, category: "" }]);
+    setCustomMoments((current) => [...current, { id, label, desc: "ZenLove gợi ý từ toàn bộ kho nhạc", category: "", icon: Sparkles }]);
     setSelectedIds((current) => [...current, id]);
-    setCustomSectionName("");
-    setIsAddingSection(false);
+    setCustomMomentName("");
+    setAddingMoment(false);
+    setStep(1);
   };
-
-  const moveSection = (id, direction) => {
+  const moveMoment = (targetId) => {
+    if (!draggingMomentId || draggingMomentId === targetId) return;
     setSelectedIds((current) => {
-      const index = current.indexOf(id);
-      const nextIndex = index + direction;
-      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+      const from = current.indexOf(draggingMomentId);
+      const to = current.indexOf(targetId);
+      if (from < 0 || to < 0) return current;
       const next = [...current];
-      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      next.splice(from, 1);
+      next.splice(to, 0, draggingMomentId);
       return next;
     });
+    setDraggingMomentId(null);
+    setPlaylist(null);
+    setStep(1);
   };
-
-  const resetPlanner = () => {
-    setSelectedIds(defaultSectionIds);
-    setCustomSections([]);
-    setCustomSectionName("");
-    setIsAddingSection(false);
-    setSuggestions(null);
-    setAddQueries({});
+  const createPlaylist = () => {
+    const next = selectedMoments.flatMap((moment) => songs.filter((song) => hasSongForMoment(song, moment)).slice(0, 3).map((song) => ({ ...song, moment: moment.label })));
+    setPlaylist(next);
     setCopied(false);
+    setStep(2);
   };
-
-  const createSuggestions = (event) => {
-    event.preventDefault();
-
-    const next = selectedSections.map((section) => {
-      const matches = songs
-        .filter((song) => belongsToSection(song, section))
-        .sort((a, b) => a.title.localeCompare(b.title, "vi"))
-        .slice(0, ["welcome", "opening"].includes(section.id) ? 8 : 3);
-      return { ...section, songs: matches };
-    });
-
-    setSuggestions(next);
-    setAddQueries({});
-    setCopied(false);
-  };
-
-  const removeSong = (sectionId, songId) => {
-    setSuggestions((current) => current?.map((section) => section.id === sectionId ? { ...section, songs: section.songs.filter((song) => song.id !== songId) } : section));
-    setCopied(false);
-  };
-
-  const addSong = (sectionId, songId) => {
-    const song = songs.find((item) => item.id === songId);
-    if (!song) return;
-    setSuggestions((current) => current?.map((section) => section.id === sectionId ? { ...section, songs: section.songs.some((item) => item.id === song.id) ? section.songs : [...section.songs, song] } : section));
-    setAddQueries((current) => ({ ...current, [sectionId]: "" }));
-    setCopied(false);
-  };
-
-  const copyList = async () => {
-    if (!suggestions) return;
-    const text = suggestions
-      .map((section, index) => {
-        const titles = section.songs.length
-          ? section.songs.map((song) => `- ${song.title}`).join("\n")
-          : "- Chưa có bài trong danh mục này";
-        return `${index + 1}. ${section.label}\n${titles}`;
-      })
-      .join("\n\n");
-    await navigator.clipboard.writeText(text);
+  const reset = () => { setSelectedIds(defaultMomentIds); setPlaylist(null); setCopied(false); setCustomMoments([]); setCustomMomentName(""); setAddingMoment(false); setStep(1); };
+  const copyPlaylist = async () => {
+    if (!playlist?.length) return;
+    await navigator.clipboard.writeText(playlist.map((song, index) => `${index + 1}. ${song.title} — ${song.moment}`).join("\n"));
     setCopied(true);
+    setStep(3);
   };
 
-  return (
-    <section
-      className={`${sectionClass} bg-[linear-gradient(180deg,#fff7f8_0%,#ffffff_72%)]`}
-      id="music-planner"
-    >
-      <SectionHeading
-        eyebrow="Gợi ý dành cho bạn"
-        title="Tạo list nhạc cưới phù hợp"
-      />
+  return <section className={`${sectionClass} music-planner-redesign`} id="music-planner">
+    <div className="mx-auto max-w-[1450px]">
+      <div className="text-center"><p className="text-xs font-extrabold uppercase tracking-[.35em] text-rose-500">Music for a better love story</p><h2 className="mt-3 font-serif text-3xl font-semibold tracking-tight text-[#281c1d] sm:text-4xl lg:text-5xl">Tạo playlist nhạc cưới chỉ trong vài phút</h2><p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500 sm:text-base">Chọn những khoảnh khắc quan trọng, Zenlove sẽ gợi ý những bài hát phù hợp nhất để ngày cưới của bạn thêm trọn vẹn.</p><span className="music-planner-heart">♡</span></div>
 
-      <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
-        <form
-          className={`${cardClass} min-w-0 p-5 sm:p-6`}
-          onSubmit={createSuggestions}
-        >
-          <fieldset>
-            <legend className="text-sm font-extrabold text-slate-800">
-              Các hạng mục cần có
-            </legend>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {allSections.map((section) => {
-                const checked = selectedIds.includes(section.id);
-                return (
-                  <label
-                    className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition ${checked ? "border-rose-300 bg-rose-50 text-rose-600" : "border-slate-100 bg-white text-slate-600 hover:border-rose-200"}`}
-                    key={section.id}
-                  >
-                    <input
-                      className="sr-only"
-                      checked={checked}
-                      onChange={() => toggleSection(section.id)}
-                      type="checkbox"
-                    />
-                    <span
-                      className={`grid size-5 place-items-center rounded-full border ${checked ? "border-rose-500 bg-rose-500 text-white" : "border-slate-300"}`}
-                    >
-                      {checked ? <Check size={13} /> : null}
-                    </span>
-                    {section.label}
-                  </label>
-                );
-              })}
-            </div>
-            {isAddingSection ? (
-              <div className="mt-3 flex gap-2">
-                <input className="h-10 min-w-0 flex-1 rounded-xl border border-rose-200 bg-white px-3 text-sm font-semibold outline-none focus:border-rose-400" onChange={(event) => setCustomSectionName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addCustomSection(); } }} placeholder="Ví dụ: Ba dắt cô dâu lên sân khấu" value={customSectionName} />
-                <button className="h-10 rounded-xl bg-rose-500 px-3 text-sm font-extrabold text-white" onClick={addCustomSection} type="button">Thêm</button>
-              </div>
-            ) : (
-              <button className="mt-3 inline-flex h-10 items-center gap-1.5 rounded-xl border border-dashed border-rose-300 px-3 text-sm font-extrabold text-rose-500 transition hover:bg-rose-50" onClick={() => setIsAddingSection(true)} type="button"><Plus size={16} />Thêm hạng mục khác</button>
-            )}
-            {selectedSections.length > 1 ? (
-              <div className="mt-5 border-t border-rose-100 pt-4">
-                <p className="text-sm font-extrabold text-slate-800">Thứ tự list nhạc</p>
-                <p className="mt-1 text-xs text-slate-500">Dùng mũi tên để sắp xếp các hạng mục theo chương trình của bạn.</p>
-                <div className="mt-3 grid gap-2">
-                  {selectedSections.map((section, index) => <div className="flex items-center justify-between gap-3 rounded-xl border border-rose-100 bg-rose-50/40 px-3 py-2" key={section.id}><span className="min-w-0 text-sm font-bold text-slate-700"><span className="mr-2 text-rose-500">{index + 1}.</span>{section.label}</span><span className="flex shrink-0 gap-1"><button aria-label={`Đưa ${section.label} lên`} className="grid size-7 place-items-center rounded-lg text-rose-500 transition hover:bg-white disabled:opacity-30" disabled={index === 0} onClick={() => moveSection(section.id, -1)} type="button"><ChevronUp size={17} /></button><button aria-label={`Đưa ${section.label} xuống`} className="grid size-7 place-items-center rounded-lg text-rose-500 transition hover:bg-white disabled:opacity-30" disabled={index === selectedSections.length - 1} onClick={() => moveSection(section.id, 1)} type="button"><ChevronDown size={17} /></button></span></div>)}
-                </div>
-              </div>
-            ) : null}
-          </fieldset>
-          <div className="mt-6 grid gap-2 sm:grid-cols-[1fr_auto]">
-            <button
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-rose-500 px-5 text-sm font-extrabold text-white shadow-lg shadow-rose-100 transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={!selectedIds.length || status !== "ready"}
-              type="submit"
-            >
-              <Sparkles size={18} />
-              Tạo gợi ý list nhạc
-            </button>
-            <button className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 text-sm font-extrabold text-rose-500 transition hover:bg-rose-50" onClick={resetPlanner} type="button"><RotateCcw size={17} />Làm lại</button>
+      <div className="mt-8 grid gap-5 xl:grid-cols-[1.28fr_1fr]">
+        <div className="music-planner-card overflow-hidden">
+          <div className="music-planner-steps"><div className={step >= 1 ? "is-active" : ""}><b>1</b><span><strong>Chọn khoảnh khắc</strong><small>Chọn các hạng mục bạn cần</small></span></div><i>→</i><div className={step >= 2 ? "is-active" : ""}><b>2</b><span><strong>Gợi ý bài hát</strong><small>Zenlove đề xuất phù hợp</small></span></div><i>→</i><div className={step >= 3 ? "is-active" : ""}><b>3</b><span><strong>Lưu playlist</strong><small>Tải về hoặc chỉnh sửa</small></span></div></div>
+          <div className="p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="music-planner-section-icon"><Music2 size={21} /></span><div><h3>Các khoảnh khắc trong lễ cưới</h3><p>Chọn những khoảnh khắc bạn muốn, chúng tôi sẽ gợi ý nhạc phù hợp</p></div></div><span className="hidden rounded-xl bg-rose-50 px-3 py-2 text-xs font-extrabold text-rose-500 sm:inline">Chọn nhanh</span></div>
+            <p className="mt-4 text-xs font-semibold text-slate-400">Kéo thả các khoảnh khắc đã chọn để sắp xếp thứ tự playlist.</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{orderedMoments.map((moment) => { const Icon = moment.icon; const checked = selectedIds.includes(moment.id); return <button className={`music-moment ${checked ? "is-selected" : ""} ${draggingMomentId === moment.id ? "is-dragging" : ""}`} draggable={checked} key={moment.id} onClick={() => toggleMoment(moment.id)} onDragEnd={() => setDraggingMomentId(null)} onDragOver={(event) => { if (checked && draggingMomentId) event.preventDefault(); }} onDragStart={() => setDraggingMomentId(moment.id)} onDrop={(event) => { event.preventDefault(); moveMoment(moment.id); }} type="button"><span className="music-moment-check">{checked ? <Check size={14} /> : null}</span>{checked ? <GripVertical className="music-moment-grip" size={16} /> : null}<Icon size={27} /><strong>{moment.label}</strong><small>{moment.desc}</small></button>; })}</div>
+            {addingMoment ? <div className="mt-3 flex gap-2"><input autoFocus className="h-10 min-w-0 flex-1 rounded-xl border border-rose-200 bg-white px-3 text-sm font-semibold outline-none focus:border-rose-400" onChange={(event) => setCustomMomentName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addCustomMoment(); }} placeholder="Ví dụ: Cô dâu và ba lên sân khấu" value={customMomentName} /><button className="rounded-xl bg-rose-500 px-4 text-sm font-extrabold text-white" onClick={addCustomMoment} type="button">Thêm</button></div> : <button className="music-add-moment" onClick={() => setAddingMoment(true)} type="button"><Plus size={16} />Thêm khoảnh khắc khác</button>}
+            <div className="mt-6 border-t border-rose-100 pt-5"><div className="flex items-center gap-3"><span className="music-planner-section-icon"><BadgeCheck size={20} /></span><div><h3>Tùy chỉnh phong cách nhạc</h3><p>Zenlove sẽ ưu tiên các bài phù hợp với không khí buổi tiệc</p></div></div><div className="mt-4 flex flex-wrap gap-2">{["Pop", "Ballad", "Acoustic", "EDM", "R&B", "Không lời", "Nhạc Việt", "Nhạc Quốc Tế"].map((style, index) => <span className={`music-style ${index === 0 ? "is-active" : ""}`} key={style}>{index === 0 ? "✓ " : ""}{style}</span>)}</div></div>
+            <div className="mt-6 flex flex-wrap gap-3"><button className="music-create-button" disabled={!selectedIds.length || status !== "ready"} onClick={createPlaylist} type="button"><Sparkles size={18} />Gợi ý danh sách nhạc ngay <span>→</span></button><button className="music-reset-button" onClick={reset} type="button"><RefreshCw size={17} />Làm mới</button>{status === "loading" ? <span className="self-center text-xs font-semibold text-slate-500">Đang tải kho nhạc...</span> : null}</div>
+            {status === "unavailable" ? <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm font-semibold text-amber-800">Kho nhạc đang chưa sẵn sàng. Vui lòng thử lại sau.</p> : null}
           </div>
-          {status === "loading" ? (
-            <p className="mt-3 text-center text-xs font-medium text-slate-500">
-              Đang tải kho nhạc...
-            </p>
-          ) : null}
-          {status === "unavailable" ? (
-            <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-800">
-              Kho nhạc đang chưa sẵn sàng. Vui lòng thử lại sau.
-            </p>
-          ) : null}
-        </form>
-
-        <div className={`${cardClass} min-w-0 p-5 sm:p-6`}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="grid size-11 place-items-center rounded-2xl bg-rose-50 text-rose-500">
-                <ClipboardList size={22} />
-              </span>
-              <div>
-                <h3 className="font-extrabold text-slate-950">
-                  Danh sách tên bài hát gợi ý
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Mỗi mục hiển thị tối đa 5 tên bài hát từ kho Zenlove.
-                </p>
-              </div>
-            </div>
-            {suggestions ? (
-              <button
-                className="shrink-0 rounded-xl border border-rose-200 px-3 py-2 text-xs font-extrabold text-rose-500 transition hover:bg-rose-50"
-                onClick={copyList}
-                type="button"
-              >
-                {copied ? "Đã sao chép" : "Sao chép list"}
-              </button>
-            ) : null}
-          </div>
-          {!suggestions ? (
-            <div className="mt-6 grid min-h-72 place-items-center rounded-2xl border border-dashed border-rose-200 bg-rose-50/35 p-6 text-center">
-              <Music className="text-rose-400" size={34} />
-              <div>
-                <p className="mt-3 font-extrabold text-slate-800">
-                  Chưa có danh sách bài hát
-                </p>
-                <p className="mt-1 max-w-sm text-sm leading-6 text-slate-500">
-                  Điền yêu cầu ở bên trái để xem tên bài hát phù hợp cho từng
-                  nghi thức.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-6 grid gap-3">
-              {suggestions.map((section, index) => (
-                <article
-                  className="min-w-0 rounded-2xl border border-rose-100 bg-rose-50/30 p-4"
-                  key={section.id}
-                >
-                  <h4 className="font-extrabold text-slate-900">
-                    {index + 1}. {section.label}
-                  </h4>
-                  {section.songs.length ? (
-                    <ol className="mt-3 min-w-0 grid gap-2">
-                      {section.songs.map((song) => (
-                        <li
-                          className="flex items-center justify-between gap-3 rounded-xl bg-white py-2 pl-3 pr-2 text-sm font-semibold text-slate-700"
-                          key={song.id}
-                        >
-                          <span className="min-w-0 break-words">{song.title}</span>
-                          <button
-                            aria-label={`Remove ${song.title}`}
-                            className="grid size-8 shrink-0 place-items-center rounded-lg text-rose-500 transition hover:bg-rose-50"
-                            onClick={() => removeSong(section.id, song.id)}
-                            type="button"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <p className="mt-3 text-sm text-slate-500">
-                      Chưa có bài được phân loại cho mục này.
-                    </p>
-                  )}
-                  <div className="mt-3 border-t border-rose-100 pt-3">
-                    <label className="relative block">
-                      <span className="sr-only">Tìm bài hát để thêm</span>
-                      <input
-                        className="h-10 w-full rounded-xl border border-rose-100 bg-white px-3 pr-10 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-rose-400"
-                        onChange={(event) => setAddQueries((current) => ({ ...current, [section.id]: event.target.value }))}
-                        placeholder="Tìm tên bài hát để thêm..."
-                        value={addQueries[section.id] || ""}
-                      />
-                      <Plus className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-rose-400" size={17} />
-                    </label>
-                    {addQueries[section.id]?.trim() ? (
-                      <div className="mt-2 grid gap-1 rounded-xl border border-rose-100 bg-white p-1.5">
-                        {songs.filter((song) => normalize(song.title).includes(normalize(addQueries[section.id])) && !section.songs.some((item) => item.id === song.id)).slice(0, 6).map((song) => (
-                          <button
-                            className="flex min-w-0 items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-rose-50 hover:text-rose-600"
-                            key={song.id}
-                            onClick={() => addSong(section.id, song.id)}
-                            type="button"
-                          >
-                            <span className="min-w-0 break-words">{song.title}</span>
-                            <span className="inline-flex shrink-0 items-center gap-1 text-xs font-extrabold text-rose-500"><Plus size={14} />Thêm</span>
-                          </button>
-                        ))}
-                        {!songs.some((song) => normalize(song.title).includes(normalize(addQueries[section.id])) && !section.songs.some((item) => item.id === song.id)) ? <p className="px-2.5 py-2 text-sm text-slate-500">Không tìm thấy bài phù hợp.</p> : null}
-                      </div>
-                    ) : null}
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
         </div>
+
+        <aside className="music-planner-card p-5 sm:p-6"><div className="flex items-start justify-between gap-4"><div className="flex items-center gap-3"><span className="music-planner-section-icon"><ClipboardList size={21} /></span><div><h3>Playlist của bạn{playlist ? ` (${playlist.length} bài)` : ""}</h3><p>Danh sách nhạc được gợi ý dựa trên lựa chọn của bạn</p></div></div>{playlist?.length ? <button className="music-save-button" onClick={copyPlaylist} type="button"><Download size={16} />{copied ? "Đã sao chép" : "Lưu playlist"}</button> : null}</div>
+          {playlist ? <ol className="music-playlist">{playlist.map((song, index) => <li key={`${song.id}-${index}`}><span className="music-track-number">{index + 1}</span><span className="music-track-cover"><Music2 size={18} /></span><div><strong>{song.title}</strong><small>{song.category || song.moment}</small></div><em>{song.moment}</em></li>)}</ol> : <div className="music-playlist-empty"><Music2 size={35} /><strong>Chưa có danh sách bài hát</strong><p>Chọn các khoảnh khắc bên trái, sau đó nhấn nút gợi ý để tạo playlist từ kho nhạc ZenLove.</p></div>}
+        </aside>
       </div>
-    </section>
-  );
+    </div>
+  </section>;
 }
 
 export default MusicPlanner;

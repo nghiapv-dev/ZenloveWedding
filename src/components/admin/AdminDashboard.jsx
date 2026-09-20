@@ -37,6 +37,7 @@ import AdminOrders from "./AdminOrders.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
 import AdminLogin from "./AdminLogin.jsx";
 import AdminReviews from "./AdminReviews.jsx";
+import AdminOverview from "./AdminOverview.jsx";
 
 const orderStatusLabels = {
   new: "Mới nhận",
@@ -502,6 +503,15 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
         }}
       />
     );
+  if (activeView === "dashboard")
+    return (
+      <main className="admin-ui min-h-screen text-slate-800">
+        <div className="admin-shell mx-auto grid max-w-[1920px] lg:grid-cols-[246px_minmax(0,1fr)]">
+          <AdminSidebar activeView={activeView} isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} onNavigate={onNavigate} />
+          <AdminOverview orders={dashboardOrders} session={session} onNavigate={onNavigate} onOpenMenu={() => setMobileNavOpen(true)} />
+        </div>
+      </main>
+    );
   const workspace = {
     templates: <AdminTemplates />,
     "orders-all": <AdminOrders scope="all" />,
@@ -518,11 +528,11 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
   }[activeView];
 
   return (
-    <main className="admin-ui min-h-screen p-3 text-slate-800 sm:p-5">
-      <div className="mx-auto grid max-w-[1720px] gap-5 lg:grid-cols-[268px_minmax(0,1fr)]">
+    <main className="admin-ui min-h-screen text-slate-800">
+      <div className="admin-shell admin-shell--workspace mx-auto grid max-w-[1920px] lg:grid-cols-[246px_minmax(0,1fr)]">
         <AdminSidebar activeView={activeView} isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} onNavigate={onNavigate} />
 
-        <section className="min-w-0 py-2 sm:py-4">
+        <section className="admin-workspace-page min-w-0 p-3 sm:p-5 lg:p-7">
           <button
             className="mb-4 inline-flex h-11 items-center gap-2 rounded-xl border border-blue-100 bg-white px-4 text-sm font-extrabold text-slate-700 shadow-sm lg:hidden"
             onClick={() => setMobileNavOpen(true)}
