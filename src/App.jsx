@@ -12,6 +12,7 @@ import FAQ from "./components/landing/FAQ.jsx";
 import OrderContact from "./components/landing/OrderContact.jsx";
 import AdminDashboard from "./components/admin/AdminDashboard.jsx";
 import MusicPlanner from "./components/landing/MusicPlanner.jsx";
+import TemplatesHero from "./components/landing/TemplatesHero.jsx";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -43,8 +44,23 @@ function App() {
     "/admin/reviews": "reviews",
   };
   const adminView = adminRoutes[pathname];
+  const isTemplatesPage = pathname === "/templates" || pathname === "/templates/";
 
   if (adminView) return <AdminDashboard activeView={adminView} onNavigate={navigateAdmin} />;
+
+  if (isTemplatesPage) {
+    return (
+      <div className="min-h-screen bg-[linear-gradient(180deg,#ffffff_0%,#fff7f8_55%,#ffffff_100%)] text-slate-950">
+        <FloatingButtons />
+        <Header />
+        <main id="top">
+          <TemplatesHero />
+          <DemoShowcase activeCategory="wedding" hideHeader />
+          <FinalCTA />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_46%,#ffffff_100%)] text-slate-950">

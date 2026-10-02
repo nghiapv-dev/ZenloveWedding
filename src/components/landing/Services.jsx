@@ -80,6 +80,11 @@ function Services({ activeDemoCategory, onSelectDemoCategory }) {
                   } ${isActive ? "border-rose-400 ring-2 ring-rose-100" : ""}`}
                   key={title}
                   onClick={() => {
+                    if (index === 0) {
+                      window.location.assign("/templates");
+                      return;
+                    }
+
                     if (demoCategory) {
                       onSelectDemoCategory(demoCategory);
                       scrollToDemo();

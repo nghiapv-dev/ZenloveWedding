@@ -1,10 +1,13 @@
 import { pillButton } from "../../constants/styles.js";
 
 function Header() {
+  const isLandingPage = window.location.pathname === "/";
+  const landingHref = (hash) => (isLandingPage ? hash : `/${hash}`);
+
   return (
     <header className="sticky top-0 z-20 border-b border-rose-100/80 bg-white/90 px-4 py-2.5 backdrop-blur-xl sm:px-6">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
-        <a className="inline-flex min-w-0 items-center gap-2.5" href="#top" aria-label="Zenlove wedding">
+        <a className="inline-flex min-w-0 items-center gap-2.5" href={landingHref("#top")} aria-label="Zenlove wedding">
           <span className="relative grid size-10 shrink-0 place-items-center overflow-hidden rounded-[18px] bg-gradient-to-br from-rose-400 via-rose-500 to-pink-500 text-white shadow-lg shadow-rose-200/70 sm:size-11">
             <span className="absolute -right-3 -top-3 size-8 rounded-full bg-white/18" />
             <span className="absolute -bottom-4 -left-4 size-10 rounded-full bg-rose-700/18" />
@@ -18,10 +21,10 @@ function Header() {
         </a>
 
         <nav className="hidden gap-7 font-bold text-slate-600 xl:flex" aria-label="Điều hướng chính">
-          <a className="hover:text-rose-500" href="#services">Dịch vụ</a>
-          <a className="hover:text-rose-500" href="#demo">Kho mẫu</a>
-          <a className="hover:text-rose-500" href="#pricing">Bảng giá</a>
-          <a className="hover:text-rose-500" href="#order">Đặt hàng</a>
+          <a className="hover:text-rose-500" href={landingHref("#services")}>Dịch vụ</a>
+          <a className="hover:text-rose-500" href={isLandingPage ? "#demo" : "/templates"}>Kho mẫu</a>
+          <a className="hover:text-rose-500" href={landingHref("#pricing")}>Bảng giá</a>
+          <a className="hover:text-rose-500" href={landingHref("#order")}>Đặt hàng</a>
         </nav>
 
         <a

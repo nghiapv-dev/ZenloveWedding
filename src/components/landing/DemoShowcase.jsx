@@ -7,7 +7,10 @@ import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
 function normalizeZenLovePreviewUrl(url, slug) {
   if (slug) return `https://zenlove.me/template-preview/${slug}`;
   if (!url) return url;
-  return url.replace("https://zenlove.me/templates/", "https://zenlove.me/template-preview/");
+  return url.replace(
+    "https://zenlove.me/templates/",
+    "https://zenlove.me/template-preview/",
+  );
 }
 
 function videoEmbedUrl(url) {
@@ -17,28 +20,46 @@ function videoEmbedUrl(url) {
     if (parsed.hostname.includes("youtu.be"))
       return `https://www.youtube-nocookie.com/embed/${parsed.pathname.slice(1)}?autoplay=1&rel=0`;
     if (parsed.hostname.includes("youtube.com")) {
-      const id = parsed.searchParams.get("v") || parsed.pathname.split("/").filter(Boolean).pop();
-      return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0` : url;
+      const id =
+        parsed.searchParams.get("v") ||
+        parsed.pathname.split("/").filter(Boolean).pop();
+      return id
+        ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`
+        : url;
     }
-  } catch { return url; }
+  } catch {
+    return url;
+  }
   return url;
 }
 
-function DemoShowcase({ activeCategory }) {
-  const activeSection = activeCategory ? serviceDemoSections[activeCategory] : null;
+function DemoShowcase({ activeCategory, hideHeader = false }) {
+  const activeSection = activeCategory
+    ? serviceDemoSections[activeCategory]
+    : null;
   const [previewImage, setPreviewImage] = useState(null);
   const [previewVideo, setPreviewVideo] = useState(null);
   const [activeImageKey, setActiveImageKey] = useState(null);
   const [cloudWeddingTemplates, setCloudWeddingTemplates] = useState(null);
-  const [cloudShowcases, setCloudShowcases] = useState({ background: [], slide: [] });
+  const [cloudShowcases, setCloudShowcases] = useState({
+    background: [],
+    slide: [],
+  });
 
   const trackTemplateClick = (category, template) => {
-    if (!isSupabaseConfigured || !["wedding", "video", "background"].includes(category)) return;
-    supabase.from("content_clicks").insert({
-      category,
-      template_key: template.analyticsKey || template.url || template.title,
-      template_name: template.title || "Mẫu chưa đặt tên",
-    }).then(() => {});
+    if (
+      !isSupabaseConfigured ||
+      !["wedding", "video", "background"].includes(category)
+    )
+      return;
+    supabase
+      .from("content_clicks")
+      .insert({
+        category,
+        template_key: template.analyticsKey || template.url || template.title,
+        template_name: template.title || "Mẫu chưa đặt tên",
+      })
+      .then(() => {});
   };
 
   useEffect(() => {
@@ -53,46 +74,90 @@ function DemoShowcase({ activeCategory }) {
         .order("created_at", { ascending: true });
 
       if (!error && mounted) {
-        setCloudWeddingTemplates((data || []).map((item, index) => ({
-          title: item.title || "Mẫu " + (index + 1),
-          url: normalizeZenLovePreviewUrl(item.url, item.slug),
-          image: item.image_url,
-          analyticsKey: item.zenlove_id || item.slug || item.id,
-        })));
+        setCloudWeddingTemplates(
+          (data || []).map((item, index) => ({
+            title: item.title || "Mẫu " + (index + 1),
+            url: normalizeZenLovePreviewUrl(item.url, item.slug),
+            image: item.image_url,
+            analyticsKey: item.zenlove_id || item.slug || item.id,
+          })),
+        );
       }
     };
 
     loadCloudTemplates();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined;
     let mounted = true;
-    supabase.from("showcase_templates").select("type, title, url, image_url, sort_order").order("sort_order", { ascending: true }).then(({ data, error }) => {
-      if (error || !mounted || !data) return;
-      const next = { background: [], slide: [] };
-      data.forEach((item, index) => {
-        if (next[item.type]) next[item.type].push({ title: item.title || "Mẫu " + (index + 1), url: item.url, image: item.image_url });
+    supabase
+      .from("showcase_templates")
+      .select("type, title, url, image_url, sort_order")
+      .order("sort_order", { ascending: true })
+      .then(({ data, error }) => {
+        if (error || !mounted || !data) return;
+        const next = { background: [], slide: [] };
+        data.forEach((item, index) => {
+          if (next[item.type])
+            next[item.type].push({
+              title: item.title || "Mẫu " + (index + 1),
+              url: item.url,
+              image: item.image_url,
+            });
+        });
+        setCloudShowcases(next);
       });
-      setCloudShowcases(next);
-    });
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const currentShowcaseType = activeCategory === "video" ? "slide" : activeCategory === "background" ? "background" : null;
-  const currentCloudShowcases = currentShowcaseType ? cloudShowcases[currentShowcaseType] : [];
-  const displayedSection = activeCategory === "wedding"
-    ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: cloudWeddingTemplates || [] }] }
-    : ["background", "video"].includes(activeCategory)
-      ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: currentCloudShowcases }] }
-    : currentCloudShowcases.length
-      ? { ...activeSection, groups: [{ ...activeSection.groups[0], items: [...activeSection.groups[0].items, ...currentCloudShowcases] }] }
-      : activeSection;
+  const currentShowcaseType =
+    activeCategory === "video"
+      ? "slide"
+      : activeCategory === "background"
+        ? "background"
+        : null;
+  const currentCloudShowcases = currentShowcaseType
+    ? cloudShowcases[currentShowcaseType]
+    : [];
+  const displayedSection =
+    activeCategory === "wedding"
+      ? {
+          ...activeSection,
+          groups: [
+            { ...activeSection.groups[0], items: cloudWeddingTemplates || [] },
+          ],
+        }
+      : ["background", "video"].includes(activeCategory)
+        ? {
+            ...activeSection,
+            groups: [
+              { ...activeSection.groups[0], items: currentCloudShowcases },
+            ],
+          }
+        : currentCloudShowcases.length
+          ? {
+              ...activeSection,
+              groups: [
+                {
+                  ...activeSection.groups[0],
+                  items: [
+                    ...activeSection.groups[0].items,
+                    ...currentCloudShowcases,
+                  ],
+                },
+              ],
+            }
+          : activeSection;
 
   return (
     <section
-      className="bg-[linear-gradient(180deg,#fff7f8_0%,#ffffff_72%)] px-4 py-8 sm:px-6 sm:py-10 lg:px-12 lg:py-12"
+      className={`${hideHeader ? "bg-[#fff7f8]" : "bg-[linear-gradient(180deg,#fff7f8_0%,#ffffff_72%)]"} px-4 py-8 sm:px-6 sm:py-10 lg:px-12 lg:py-12`}
       id="demo"
     >
       <div className="mx-auto max-w-6xl">
@@ -103,79 +168,100 @@ function DemoShowcase({ activeCategory }) {
               Chọn một dịch vụ để xem mẫu
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              Bấm Xem mẫu hoặc Xem Demo ở phần Dịch vụ của Zenlove wedding, danh sách mẫu tương ứng sẽ hiện tại đây.
+              Bấm Xem mẫu hoặc Xem Demo ở phần Dịch vụ của Zenlove wedding, danh
+              sách mẫu tương ứng sẽ hiện tại đây.
             </p>
           </div>
         ) : (
           <>
-            <div className="mb-5 border-b border-rose-100 pb-5 sm:mb-7">
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-rose-500">
-                {displayedSection.eyebrow}
-              </p>
-              <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-950 sm:text-2xl lg:text-3xl">
-                    {displayedSection.title}
-                  </h2>
-                  {displayedSection.subtitle ? (
-                    <p className="mt-2 text-sm text-slate-500">{displayedSection.subtitle}</p>
-                  ) : null}
+            {!hideHeader ? (
+              <div className="mb-5 border-b border-rose-100 pb-5 sm:mb-7">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-rose-500">
+                  {displayedSection.eyebrow}
+                </p>
+                <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-extrabold text-slate-950 sm:text-2xl lg:text-3xl">
+                      {displayedSection.title}
+                    </h2>
+                    {displayedSection.subtitle ? (
+                      <p className="mt-2 text-sm text-slate-500">
+                        {displayedSection.subtitle}
+                      </p>
+                    ) : null}
+                  </div>
+                  <a
+                    className="inline-flex min-h-10 items-center justify-center rounded-full bg-rose-500 px-5 text-sm font-bold text-white transition hover:bg-rose-600"
+                    href="https://zalo.me/0335652868"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Tư vấn chọn mẫu
+                  </a>
                 </div>
-                <a
-                  className="inline-flex min-h-10 items-center justify-center rounded-full bg-rose-500 px-5 text-sm font-bold text-white transition hover:bg-rose-600"
-                  href="https://zalo.me/0335652868"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Tư vấn chọn mẫu
-                </a>
               </div>
-            </div>
+            ) : null}
 
             <div className="grid gap-4 lg:grid-cols-2">
               {displayedSection.groups.map((group) => {
                 const hasImage = group.items.some((item) => item.image);
-                const isLandscape = ["slide", "landscape"].includes(displayedSection.variant);
+                const isLandscape = ["slide", "landscape"].includes(
+                  displayedSection.variant,
+                );
 
                 return (
                   <section
-                    className={`rounded-2xl border border-rose-100 bg-white p-4 shadow-[0_12px_30px_rgba(229,65,83,0.08)] sm:p-5 ${
-                      hasImage ? "lg:col-span-2" : ""
-                    }`}
+                    className={
+                      hideHeader
+                        ? "lg:col-span-2"
+                        : `rounded-2xl border border-rose-100 bg-white p-4 shadow-[0_12px_30px_rgba(229,65,83,0.08)] sm:p-5 ${
+                            hasImage ? "lg:col-span-2" : ""
+                          }`
+                    }
                     key={group.title}
                   >
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <div>
-                        <h3 className="text-lg font-extrabold text-slate-950 sm:text-xl">
-                          {group.title}
-                        </h3>
-                        <p className="mt-1 text-sm text-slate-500">{group.items.length} mẫu</p>
+                    {!hideHeader ? (
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <h3 className="text-lg font-extrabold text-slate-950 sm:text-xl">
+                            {group.title}
+                          </h3>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {group.items.length} mẫu
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    ) : null}
 
                     <div
                       className={
-                        hasImage
-                          ? isLandscape
-                            ? "grid grid-cols-2 gap-3 lg:grid-cols-4"
-                            : "grid grid-cols-2 gap-3 lg:grid-cols-5"
-                          : "grid grid-cols-2 gap-2"
+                        hideHeader && hasImage
+                          ? "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5"
+                          : hasImage
+                            ? isLandscape
+                              ? "grid grid-cols-2 gap-3 lg:grid-cols-4"
+                              : "grid grid-cols-2 gap-3 lg:grid-cols-5"
+                            : "grid grid-cols-2 gap-2"
                       }
                     >
                       {group.items.map((item, itemIndex) => {
                         const displayTitle =
-                          activeCategory === "wedding" && cloudWeddingTemplates?.length
+                          activeCategory === "wedding" &&
+                          cloudWeddingTemplates?.length
                             ? `Mẫu ${itemIndex + 1}`
                             : item.title;
-                        const canWatchInline = ["video", "background"].includes(activeCategory) && Boolean(item.url);
+                        const canWatchInline =
+                          ["video", "background"].includes(activeCategory) &&
+                          Boolean(item.url);
                         if (item.image) {
                           const imageKey = `${group.title}-${displayTitle}`;
                           const isActiveImage = activeImageKey === imageKey;
-                          const shouldScrollImage = !isLandscape && Boolean(item.url);
+                          const shouldScrollImage =
+                            !isLandscape && Boolean(item.url);
 
                           return (
                             <a
-                              className="group overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-[0_10px_24px_rgba(229,65,83,0.08)] transition hover:-translate-y-0.5 hover:border-rose-300"
+                              className={`group overflow-hidden border border-rose-100 bg-white shadow-[0_8px_22px_rgba(44,35,36,0.12)] transition hover:-translate-y-1 hover:border-rose-300 hover:shadow-[0_14px_30px_rgba(229,65,83,0.16)] ${hideHeader ? "rounded-xl" : "rounded-2xl"}`}
                               href={item.url || item.image}
                               target={item.url ? "_blank" : undefined}
                               rel={item.url ? "noreferrer" : undefined}
@@ -183,7 +269,10 @@ function DemoShowcase({ activeCategory }) {
                                 if (canWatchInline) {
                                   event.preventDefault();
                                   trackTemplateClick(activeCategory, item);
-                                  setPreviewVideo({ title: displayTitle, url: videoEmbedUrl(item.url) });
+                                  setPreviewVideo({
+                                    title: displayTitle,
+                                    url: videoEmbedUrl(item.url),
+                                  });
                                   return;
                                 }
                                 const isTouchDevice = window.matchMedia(
@@ -211,7 +300,11 @@ function DemoShowcase({ activeCategory }) {
                             >
                               <div
                                 className={`relative overflow-hidden bg-rose-50 ${
-                                  isLandscape ? "aspect-video" : "aspect-[3/4]"
+                                  isLandscape
+                                    ? "aspect-video"
+                                    : hideHeader
+                                      ? "aspect-[2/3]"
+                                      : "aspect-[3/4]"
                                 }`}
                               >
                                 <img
@@ -234,7 +327,14 @@ function DemoShowcase({ activeCategory }) {
                                     isActiveImage ? "opacity-100" : "opacity-0"
                                   }`}
                                 >
-                                  {canWatchInline ? <><Play size={15} fill="currentColor" /> Xem ngay</> : displayedSection.ctaLabel || "Xem mẫu"}
+                                  {canWatchInline ? (
+                                    <>
+                                      <Play size={15} fill="currentColor" /> Xem
+                                      ngay
+                                    </>
+                                  ) : (
+                                    displayedSection.ctaLabel || "Xem mẫu"
+                                  )}
                                 </span>
                               </div>
                             </a>
@@ -253,7 +353,10 @@ function DemoShowcase({ activeCategory }) {
                                 if (!canWatchInline) return;
                                 event.preventDefault();
                                 trackTemplateClick(activeCategory, item);
-                                setPreviewVideo({ title: displayTitle, url: videoEmbedUrl(item.url) });
+                                setPreviewVideo({
+                                  title: displayTitle,
+                                  url: videoEmbedUrl(item.url),
+                                });
                               }}
                             >
                               <span>{displayTitle}</span>
@@ -300,11 +403,26 @@ function DemoShowcase({ activeCategory }) {
             role="dialog"
           >
             <div className="flex items-center justify-between bg-white px-4 py-3">
-              <strong className="text-sm text-slate-900 sm:text-base">{previewVideo.title}</strong>
-              <button aria-label="Đóng video" className="grid size-9 place-items-center rounded-full text-slate-600 transition hover:bg-slate-100" onClick={() => setPreviewVideo(null)} type="button"><X size={20} /></button>
+              <strong className="text-sm text-slate-900 sm:text-base">
+                {previewVideo.title}
+              </strong>
+              <button
+                aria-label="Đóng video"
+                className="grid size-9 place-items-center rounded-full text-slate-600 transition hover:bg-slate-100"
+                onClick={() => setPreviewVideo(null)}
+                type="button"
+              >
+                <X size={20} />
+              </button>
             </div>
             <div className="aspect-video">
-              <iframe allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen className="h-full w-full" src={previewVideo.url} title={previewVideo.title} />
+              <iframe
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                className="h-full w-full"
+                src={previewVideo.url}
+                title={previewVideo.title}
+              />
             </div>
           </div>
         </div>
@@ -314,7 +432,3 @@ function DemoShowcase({ activeCategory }) {
 }
 
 export default DemoShowcase;
-
-
-
-
