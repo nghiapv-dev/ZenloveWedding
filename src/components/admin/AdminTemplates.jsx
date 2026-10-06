@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Database,
+  Eye,
+  EyeOff,
   ExternalLink,
   ImagePlus,
   Lock,
-  LogOut,
   Plus,
   RefreshCw,
   Trash2,
@@ -158,6 +159,7 @@ function AdminTemplates() {
   const [schemaMissing, setSchemaMissing] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [query, setQuery] = useState("");
+  const [visibilityFilter, setVisibilityFilter] = useState("visible");
   const [page, setPage] = useState(1);
   const loadTemplates = async () => {
     const { data, error } = await supabase
@@ -229,6 +231,7 @@ function AdminTemplates() {
           image_path: path,
           image_url: publicData.publicUrl,
           sort_order: templates.length + 1,
+          is_visible: true,
         });
       if (insertError) throw insertError;
       event.target.reset();
@@ -264,8 +267,66 @@ function AdminTemplates() {
       setLoading(false);
     }
   };
-  const filteredTemplates = templates.filter((item) => item.title?.toLowerCase().includes(query.trim().toLowerCase()));
-  const templatesPerPage = 12;
+  const toggleTemplateVisibility = async (item) => {
+    const nextVisibility = item.is_visible === false;
+    setLoading(true);
+    setMessage("");
+    try {
+      const { error } = await supabase
+        .from("wedding_templates")
+        .update({ is_visible: nextVisibility })
+        .eq("id", item.id);
+      if (error) throw error;
+      setTemplates((current) =>
+        current.map((template) =>
+          template.id === item.id
+            ? { ...template, is_visible: nextVisibility }
+            : template,
+        ),
+      );
+      setMessage(
+        nextVisibility
+          ? "Đã hiển thị lại mẫu thiệp."
+          : "Đã ẩn mẫu khỏi trang người dùng.",
+      );
+    } catch (error) {
+      setMessage(
+        error.message?.includes("is_visible")
+          ? "Hãy chạy migration supabase-template-visibility-migration.sql trước."
+          : error.message || "Không thể đổi trạng thái mẫu.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  const normalizedQuery = query.trim().toLowerCase();
+  const templatePositions = new Map(
+    templates.map((item, index) => [item.id, index + 1]),
+  );
+  let visiblePosition = 0;
+  const publicTemplateNumbers = new Map(
+    templates.map((item) => [
+      item.id,
+      item.is_visible !== false ? ++visiblePosition : null,
+    ]),
+  );
+  const filteredTemplates = templates.filter((item) => {
+    const isVisible = item.is_visible !== false;
+    const matchesVisibility =
+      visibilityFilter === "all" ||
+      (visibilityFilter === "visible" && isVisible) ||
+      (visibilityFilter === "hidden" && !isVisible);
+    const templateNumber = publicTemplateNumbers.get(item.id);
+    const matchesQuery =
+      !normalizedQuery ||
+      item.title?.toLowerCase().includes(normalizedQuery) ||
+      (templateNumber && `mẫu ${templateNumber}`.includes(normalizedQuery)) ||
+      (templateNumber && `mau ${templateNumber}`.includes(normalizedQuery));
+    return matchesVisibility && matchesQuery;
+  });
+  const visibleCount = templates.filter((item) => item.is_visible !== false).length;
+  const hiddenCount = templates.length - visibleCount;
+  const templatesPerPage = 20;
   const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / templatesPerPage));
   const visibleTemplates = filteredTemplates.slice((Math.min(page, totalPages) - 1) * templatesPerPage, Math.min(page, totalPages) * templatesPerPage);
   const syncZenLoveTemplates = async () => {
@@ -296,7 +357,7 @@ function AdminTemplates() {
   if (schemaMissing) return <SchemaMissing />;
   return (
     <main className="admin-ui min-h-screen px-4 py-6 text-slate-950 sm:px-6">
-      <section className="mx-auto max-w-6xl">
+      <section className="mx-auto w-full max-w-none">
         <a
           className="mb-5 inline-flex items-center gap-2 text-sm font-extrabold text-slate-600 transition hover:text-[#E54153]"
           href="/admin/dashboard"
@@ -312,7 +373,7 @@ function AdminTemplates() {
             <div>
               <h1 className="text-xl font-extrabold">Mẫu thiệp Zenlove</h1>
               <p className="mt-1 text-xs text-slate-500">
-                {templates.length} mẫu cloud đang hiển thị trên website
+                {templates.length} mẫu · {visibleCount} đang hiển thị · {hiddenCount} đã ẩn
               </p>
             </div>
           </div>
@@ -333,14 +394,6 @@ function AdminTemplates() {
             >
               <RefreshCw className={loading ? "animate-spin" : ""} size={16} />
               Đồng bộ ZenLove
-            </button>
-            <button
-              className="inline-flex h-10 items-center gap-2 rounded-full border border-rose-100 px-4 text-sm font-bold text-slate-600"
-              type="button"
-              onClick={() => supabase.auth.signOut()}
-            >
-              <LogOut size={16} />
-              Thoát
             </button>
           </div>
         </header>
@@ -385,11 +438,6 @@ function AdminTemplates() {
                 {image.name}
               </p>
             ) : null}
-            {message ? (
-              <p className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-600">
-                {message}
-              </p>
-            ) : null}
             <button
               className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-rose-500 text-sm font-extrabold text-white disabled:opacity-60"
               disabled={loading}
@@ -402,43 +450,107 @@ function AdminTemplates() {
           <section className="rounded-3xl border border-rose-100 bg-white p-4 shadow-[0_12px_32px_rgba(229,65,83,0.08)]">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-extrabold">Danh sách mẫu</h2>
-              <label className="relative">
-                <input
-                  className="h-10 w-48 rounded-xl border border-rose-100 bg-rose-50/50 px-3 text-sm outline-none sm:w-56"
-                  placeholder="Tìm kiếm mẫu..."
-                  value={query}
-                  onChange={(event) => { setQuery(event.target.value); setPage(1); }}
-                />
-              </label>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="flex rounded-xl bg-slate-100 p-1">
+                  {[
+                    ["all", "Tất cả"],
+                    ["visible", "Đang hiện"],
+                    ["hidden", "Đã ẩn"],
+                  ].map(([value, label]) => (
+                    <button
+                      className={`rounded-lg px-3 py-2 text-xs font-extrabold transition ${
+                        visibilityFilter === value
+                          ? "bg-white text-blue-600 shadow-sm"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                      key={value}
+                      onClick={() => {
+                        setVisibilityFilter(value);
+                        setPage(1);
+                      }}
+                      type="button"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <label className="relative">
+                  <input
+                    className="h-10 w-48 rounded-xl border border-rose-100 bg-rose-50/50 px-3 text-sm outline-none sm:w-56"
+                    placeholder="Tìm tên hoặc Mẫu 1..."
+                    value={query}
+                    onChange={(event) => { setQuery(event.target.value); setPage(1); }}
+                  />
+                </label>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {visibleTemplates.map((item) => (
+            {message ? (
+              <p className="mb-4 rounded-xl bg-blue-50 p-3 text-sm font-bold text-blue-700">
+                {message}
+              </p>
+            ) : null}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {visibleTemplates.map((item) => {
+                const templateNumber = publicTemplateNumbers.get(item.id);
+                const templatePosition = templatePositions.get(item.id);
+                const isVisible = item.is_visible !== false;
+                return (
                 <article
-                  className="overflow-hidden rounded-2xl border border-rose-100"
+                  className={`group overflow-hidden rounded-2xl border bg-white transition ${
+                    isVisible
+                      ? "border-rose-100"
+                      : "border-slate-200 opacity-75"
+                  }`}
                   key={item.id}
                 >
-                  <img
-                    className="aspect-[3/4] w-full object-cover"
-                    src={item.image_url}
-                    alt={item.title}
-                  />
-                  <div className="flex items-center justify-between gap-2 p-2">
+                  <div className="relative aspect-[3/4] overflow-hidden bg-rose-50">
+                    <img
+                      className={`template-preview-image ${isVisible ? "" : "grayscale-[35%]"}`}
+                      src={item.image_url}
+                      alt={isVisible ? `Mẫu ${templateNumber}` : item.title}
+                    />
+                    <span className="absolute left-2 top-2 rounded-full bg-white/95 px-2.5 py-1 text-xs font-extrabold text-blue-600 shadow-sm">
+                      {isVisible ? `Mẫu ${templateNumber}` : `Vị trí ${templatePosition}`}
+                    </span>
+                    <span
+                      className={`absolute right-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-sm ${
+                        isVisible
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-700 text-white"
+                      }`}
+                    >
+                      {isVisible ? "Đang hiển thị" : "Đã ẩn"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 p-2.5">
                     <div className="min-w-0">
                       <a
-                        className="block truncate text-sm font-extrabold text-slate-900 hover:text-rose-500"
+                        className="block text-sm font-extrabold text-slate-900 hover:text-rose-500"
                         href={item.url}
                         target="_blank"
                         rel="noreferrer"
                       >
-                        {item.title}
+                        {isVisible ? `Mẫu ${templateNumber}` : "Mẫu đã ẩn"}
                       </a>
-                      {item.source === "zenlove" ? (
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-rose-500">
-                          ZenLove
-                        </span>
-                      ) : null}
+                      <span className="mt-0.5 block truncate text-[11px] font-semibold text-slate-500" title={item.title}>
+                        {item.title}
+                      </span>
                     </div>
                     <div className="flex shrink-0 gap-1">
+                      <button
+                        className={`grid size-8 place-items-center rounded-full transition ${
+                          isVisible
+                            ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                        }`}
+                        type="button"
+                        disabled={loading}
+                        onClick={() => toggleTemplateVisibility(item)}
+                        aria-label={isVisible ? "Ẩn mẫu" : "Hiển thị mẫu"}
+                        title={isVisible ? "Ẩn khỏi trang người dùng" : "Hiển thị trên trang người dùng"}
+                      >
+                        {isVisible ? <Eye size={15} /> : <EyeOff size={15} />}
+                      </button>
                       <a
                         className="grid size-8 place-items-center rounded-full bg-rose-50 text-rose-500"
                         href={item.url}
@@ -461,7 +573,8 @@ function AdminTemplates() {
                     </div>
                   </div>
                 </article>
-              ))}
+                );
+              })}
             </div>
             {filteredTemplates.length > templatesPerPage ? (
               <div className="mt-5 flex items-center justify-center gap-2">
@@ -472,7 +585,7 @@ function AdminTemplates() {
             ) : null}
             {!filteredTemplates.length ? (
               <div className="rounded-2xl bg-rose-50 p-8 text-center text-sm font-bold text-slate-500">
-                {query ? "Không tìm thấy mẫu phù hợp." : "Chưa có mẫu cloud. Các mẫu hiện có trên web vẫn được giữ nguyên."}
+                {query || visibilityFilter !== "all" ? "Không tìm thấy mẫu phù hợp." : "Chưa có mẫu cloud. Các mẫu hiện có trên web vẫn được giữ nguyên."}
               </div>
             ) : null}
           </section>

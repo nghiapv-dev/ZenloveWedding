@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
+  Eye,
+  EyeOff,
   ExternalLink,
   ImagePlus,
   Lock,
@@ -29,6 +31,8 @@ function AdminShowcase({ type }) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [visibilityFilter, setVisibilityFilter] = useState("visible");
+  const [page, setPage] = useState(1);
   const builtIn = [];
   const displayedItems = [
     ...builtIn,
@@ -85,6 +89,7 @@ function AdminShowcase({ type }) {
           image_path: path,
           image_url: imageData.publicUrl,
           sort_order: items.length + 1,
+          is_visible: true,
         });
       if (error) throw error;
       event.target.reset();
@@ -111,6 +116,63 @@ function AdminShowcase({ type }) {
     await supabase.storage.from(bucket).remove([item.image_path]);
     await load();
   };
+  const toggleVisibility = async (item) => {
+    const nextVisibility = item.is_visible === false;
+    setLoading(true);
+    setMessage("");
+    try {
+      const { error } = await supabase
+        .from("showcase_templates")
+        .update({ is_visible: nextVisibility })
+        .eq("id", item.id);
+      if (error) throw error;
+      setItems((current) =>
+        current.map((currentItem) =>
+          currentItem.id === item.id
+            ? { ...currentItem, is_visible: nextVisibility }
+            : currentItem,
+        ),
+      );
+      setMessage(
+        nextVisibility
+          ? `Đã hiển thị lại ${label.toLowerCase()}.`
+          : `Đã ẩn ${label.toLowerCase()} khỏi trang người dùng.`,
+      );
+    } catch (error) {
+      setMessage(
+        error.message?.includes("is_visible")
+          ? "Hãy chạy migration supabase-showcase-visibility-migration.sql trước."
+          : error.message || "Không thể đổi trạng thái mẫu.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const visibleCount = displayedItems.filter((item) => item.is_visible !== false).length;
+  const hiddenCount = displayedItems.length - visibleCount;
+  let publicNumber = 0;
+  const publicNumbers = new Map(
+    displayedItems.map((item, index) => [
+      item.id || `website-${index}`,
+      item.is_visible !== false ? ++publicNumber : null,
+    ]),
+  );
+  const filteredItems = displayedItems.filter((item) => {
+    const isVisible = item.is_visible !== false;
+    return (
+      visibilityFilter === "all" ||
+      (visibilityFilter === "visible" && isVisible) ||
+      (visibilityFilter === "hidden" && !isVisible)
+    );
+  });
+  const itemsPerPage = 20;
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+  const safePage = Math.min(page, totalPages);
+  const paginatedItems = filteredItems.slice(
+    (safePage - 1) * itemsPerPage,
+    safePage * itemsPerPage,
+  );
 
   if (!isSupabaseConfigured || !session)
     return (
@@ -123,7 +185,7 @@ function AdminShowcase({ type }) {
     );
   return (
     <main className="admin-ui min-h-screen p-4 text-slate-800 sm:p-6">
-      <section className="mx-auto max-w-6xl">
+      <section className="mx-auto w-full max-w-none">
         <a
           className="mb-5 inline-flex items-center gap-2 text-sm font-extrabold text-slate-600 hover:text-[#E54153]"
           href="/admin/dashboard"
@@ -141,6 +203,9 @@ function AdminShowcase({ type }) {
                 Quản lý thư viện
               </p>
               <h1 className="mt-1 text-2xl font-extrabold">{label}</h1>
+              <p className="mt-1 text-xs text-slate-500">
+                {displayedItems.length} mẫu · {visibleCount} đang hiển thị · {hiddenCount} đã ẩn
+              </p>
             </div>
           </div>
           <button
@@ -202,11 +267,6 @@ function AdminShowcase({ type }) {
                   {image.name}
                 </p>
               ) : null}
-              {message ? (
-                <p className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-[#E54153]">
-                  {message}
-                </p>
-              ) : null}
               <button
                 className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#E54153] text-sm font-extrabold text-white disabled:opacity-50"
                 disabled={loading}
@@ -218,26 +278,54 @@ function AdminShowcase({ type }) {
             </form>
           ) : null}
           <section className="rounded-3xl border border-rose-100 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-extrabold">Danh sách mẫu</h2>
-              <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-extrabold text-[#E54153]">
-                {displayedItems.length} mẫu
-              </span>
+              <div className="flex rounded-xl bg-slate-100 p-1">
+                {[
+                  ["all", "Tất cả"],
+                  ["visible", "Đang hiện"],
+                  ["hidden", "Đã ẩn"],
+                ].map(([value, filterLabel]) => (
+                  <button
+                    className={`rounded-lg px-3 py-2 text-xs font-extrabold transition ${visibilityFilter === value ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+                    key={value}
+                    onClick={() => {
+                      setVisibilityFilter(value);
+                      setPage(1);
+                    }}
+                    type="button"
+                  >
+                    {filterLabel}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {displayedItems.map((item, index) => (
+            {message ? (
+              <p className="mb-4 rounded-xl bg-blue-50 p-3 text-sm font-bold text-blue-700">
+                {message}
+              </p>
+            ) : null}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {paginatedItems.map((item, index) => {
+                const itemKey = item.id || `website-${index}`;
+                const isVisible = item.is_visible !== false;
+                const templateNumber = publicNumbers.get(itemKey);
+                return (
                 <article
-                  className="overflow-hidden rounded-2xl border border-rose-100"
-                  key={item.id || `website-${index}`}
+                  className={`overflow-hidden rounded-2xl border bg-white ${isVisible ? "border-rose-100" : "border-slate-200 opacity-75"}`}
+                  key={itemKey}
                 >
                   <div className="relative">
                     <img
-                      className="aspect-video w-full object-cover"
+                      className={`aspect-video w-full object-cover ${isVisible ? "" : "grayscale-[35%]"}`}
                       src={item.image_url || item.image}
-                      alt={item.title}
+                      alt={isVisible ? `Mẫu ${templateNumber}` : item.title}
                     />
                     <span className="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-1 text-[10px] font-extrabold text-[#E54153]">
-                      {item.source === "website" ? "Đang hiển thị" : "Cloud"}
+                      {isVisible ? `Mẫu ${templateNumber}` : "Mẫu đã ẩn"}
+                    </span>
+                    <span className={`absolute right-2 top-2 rounded-full px-2 py-1 text-[10px] font-extrabold ${isVisible ? "bg-emerald-100 text-emerald-700" : "bg-slate-700 text-white"}`}>
+                      {isVisible ? "Đang hiển thị" : "Đã ẩn"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-2 p-2">
@@ -250,6 +338,15 @@ function AdminShowcase({ type }) {
                       {item.title}
                     </a>
                     <div className="flex gap-1">
+                      <button
+                        className={`grid size-8 place-items-center rounded-full ${isVisible ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"}`}
+                        disabled={loading}
+                        onClick={() => toggleVisibility(item)}
+                        type="button"
+                        aria-label={isVisible ? "Ẩn mẫu" : "Hiển thị mẫu"}
+                      >
+                        {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                      </button>
                       <a
                         className="grid size-8 place-items-center rounded-full bg-rose-50 text-[#E54153]"
                         href={item.url}
@@ -270,8 +367,16 @@ function AdminShowcase({ type }) {
                     </div>
                   </div>
                 </article>
-              ))}
+                );
+              })}
             </div>
+            {filteredItems.length > itemsPerPage ? (
+              <div className="mt-5 flex items-center justify-center gap-2">
+                <button className="h-9 rounded-lg border border-rose-100 px-3 text-sm font-bold disabled:opacity-40" disabled={safePage <= 1} onClick={() => setPage((current) => current - 1)} type="button">←</button>
+                <span className="text-sm font-bold text-slate-500">{safePage} / {totalPages}</span>
+                <button className="h-9 rounded-lg border border-rose-100 px-3 text-sm font-bold disabled:opacity-40" disabled={safePage >= totalPages} onClick={() => setPage((current) => current + 1)} type="button">→</button>
+              </div>
+            ) : null}
           </section>
         </div>
       </section>

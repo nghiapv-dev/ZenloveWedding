@@ -407,7 +407,7 @@ function AdminMusic() {
 
   return (
     <main className="admin-ui min-h-screen px-3 py-4 text-slate-950 sm:px-6 sm:py-7 lg:px-10">
-      <section className="mx-auto max-w-7xl">
+      <section className="mx-auto w-full max-w-none">
         <a
           className="mb-5 inline-flex items-center gap-2 text-sm font-extrabold text-slate-600 transition hover:text-[#E54153]"
           href="/admin/dashboard"

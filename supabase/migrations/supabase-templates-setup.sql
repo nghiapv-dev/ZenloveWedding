@@ -19,6 +19,7 @@ create table if not exists public.wedding_templates (
   template_type text,
   category_id text,
   source text not null default 'manual' check (source in ('manual', 'zenlove')),
+  is_visible boolean not null default true,
   synced_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -34,28 +35,39 @@ alter table public.wedding_templates add column if not exists long_thumbnail_key
 alter table public.wedding_templates add column if not exists template_type text;
 alter table public.wedding_templates add column if not exists category_id text;
 alter table public.wedding_templates add column if not exists source text not null default 'manual';
+alter table public.wedding_templates add column if not exists is_visible boolean not null default true;
 alter table public.wedding_templates add column if not exists synced_at timestamptz;
 alter table public.wedding_templates add column if not exists updated_at timestamptz not null default now();
 create unique index if not exists wedding_templates_zenlove_id_key
 on public.wedding_templates (zenlove_id);
+create index if not exists wedding_templates_visibility_sort_idx
+on public.wedding_templates (is_visible, sort_order, created_at);
 
 alter table public.wedding_templates enable row level security;
 
 drop policy if exists "public can read wedding templates" on public.wedding_templates;
+drop policy if exists "public can read visible wedding templates" on public.wedding_templates;
+drop policy if exists "authenticated users can read wedding templates" on public.wedding_templates;
+drop policy if exists "authenticated users can update wedding templates" on public.wedding_templates;
 drop policy if exists "owners can insert wedding templates" on public.wedding_templates;
 drop policy if exists "owners can update wedding templates" on public.wedding_templates;
 drop policy if exists "owners can delete wedding templates" on public.wedding_templates;
 
-create policy "public can read wedding templates"
-on public.wedding_templates for select using (true);
+create policy "public can read visible wedding templates"
+on public.wedding_templates for select to anon
+using (is_visible = true);
+
+create policy "authenticated users can read wedding templates"
+on public.wedding_templates for select to authenticated
+using (true);
 
 create policy "owners can insert wedding templates"
 on public.wedding_templates for insert to authenticated
 with check (auth.uid() = owner_id);
 
-create policy "owners can update wedding templates"
+create policy "authenticated users can update wedding templates"
 on public.wedding_templates for update to authenticated
-using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+using (true) with check (true);
 
 create policy "owners can delete wedding templates"
 on public.wedding_templates for delete to authenticated

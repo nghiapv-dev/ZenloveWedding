@@ -67,11 +67,24 @@ function DemoShowcase({ activeCategory, hideHeader = false }) {
 
     let mounted = true;
     const loadCloudTemplates = async () => {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("wedding_templates")
         .select("id, zenlove_id, slug, title, url, image_url, sort_order")
+        .eq("is_visible", true)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
+
+      // Keep the public gallery available while an older database is waiting
+      // for the visibility migration to be applied.
+      if (error?.message?.includes("is_visible")) {
+        const fallback = await supabase
+          .from("wedding_templates")
+          .select("id, zenlove_id, slug, title, url, image_url, sort_order")
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true });
+        data = fallback.data;
+        error = fallback.error;
+      }
 
       if (!error && mounted) {
         setCloudWeddingTemplates(
@@ -94,12 +107,23 @@ function DemoShowcase({ activeCategory, hideHeader = false }) {
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined;
     let mounted = true;
-    supabase
-      .from("showcase_templates")
-      .select("type, title, url, image_url, sort_order")
-      .order("sort_order", { ascending: true })
-      .then(({ data, error }) => {
-        if (error || !mounted || !data) return;
+    const loadShowcases = async () => {
+      let { data, error } = await supabase
+        .from("showcase_templates")
+        .select("type, title, url, image_url, sort_order")
+        .eq("is_visible", true)
+        .order("sort_order", { ascending: true });
+
+      if (error?.message?.includes("is_visible")) {
+        const fallback = await supabase
+          .from("showcase_templates")
+          .select("type, title, url, image_url, sort_order")
+          .order("sort_order", { ascending: true });
+        data = fallback.data;
+        error = fallback.error;
+      }
+
+      if (error || !mounted || !data) return;
         const next = { background: [], slide: [] };
         data.forEach((item, index) => {
           if (next[item.type])
@@ -110,7 +134,8 @@ function DemoShowcase({ activeCategory, hideHeader = false }) {
             });
         });
         setCloudShowcases(next);
-      });
+    };
+    loadShowcases();
     return () => {
       mounted = false;
     };

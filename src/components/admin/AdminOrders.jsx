@@ -482,7 +482,7 @@ function AdminOrders({ scope = "customer" }) {
 
   return (
     <main className="admin-ui min-h-screen p-4 text-slate-800 sm:p-6">
-      <section className="mx-auto max-w-[1400px]">
+      <section className="mx-auto w-full max-w-none">
         <header className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-blue-100 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
           <div className="flex items-center gap-3">
             <span className="grid size-12 place-items-center rounded-2xl bg-blue-50 text-blue-600">
