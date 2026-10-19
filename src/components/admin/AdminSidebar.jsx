@@ -35,6 +35,7 @@ const orderLinks = [
 ];
 const contentLinks = [
   ["/admin/templates", "Thiệp cưới", "templates", CalendarHeart],
+  ["/admin/featured-templates", "Mẫu thiệp nổi bật", "featured-templates", Star],
   ["/admin/slides", "Slide cưới", "slides", Video],
   ["/admin/music", "Nhạc cưới", "music", Music],
   ["/admin/backgrounds", "Màn sao băng", "backgrounds", Sparkles],

@@ -33,6 +33,7 @@ function DemoShowcase({ activeCategory, hideHeader = false }) {
   const [previewVideo, setPreviewVideo] = useState(null);
   const [activeImageKey, setActiveImageKey] = useState(null);
   const [cloudWeddingTemplates, setCloudWeddingTemplates] = useState(null);
+  const [featuredTemplateIds, setFeaturedTemplateIds] = useState([]);
   const [cloudShowcases, setCloudShowcases] = useState({
     background: [],
     slide: [],
@@ -81,6 +82,8 @@ function DemoShowcase({ activeCategory, hideHeader = false }) {
       if (!error && mounted) {
         setCloudWeddingTemplates(
           (data || []).map((item, index) => ({
+            id: item.id,
+            displayNumber: index + 1,
             title: item.title || "Mẫu " + (index + 1),
             url: zenLoveTemplatePreviewUrl(item.url, item.slug),
             image: item.image_url,
@@ -95,6 +98,25 @@ function DemoShowcase({ activeCategory, hideHeader = false }) {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || hideHeader) return undefined;
+    let mounted = true;
+
+    supabase
+      .from("featured_wedding_templates")
+      .select("template_id, sort_order")
+      .order("sort_order", { ascending: true })
+      .then(({ data, error }) => {
+        if (!error && mounted) {
+          setFeaturedTemplateIds((data || []).map((item) => item.template_id));
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [hideHeader]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined;
@@ -142,6 +164,12 @@ function DemoShowcase({ activeCategory, hideHeader = false }) {
   const currentCloudShowcases = currentShowcaseType
     ? cloudShowcases[currentShowcaseType]
     : [];
+  const weddingTemplateById = new Map(
+    (cloudWeddingTemplates || []).map((item) => [item.id, item]),
+  );
+  const featuredTemplates = featuredTemplateIds
+    .map((id) => weddingTemplateById.get(id))
+    .filter(Boolean);
   const displayedSection =
     activeCategory === "wedding"
       ? {
@@ -178,7 +206,54 @@ function DemoShowcase({ activeCategory, hideHeader = false }) {
       id="demo"
     >
       <div className="mx-auto max-w-6xl">
-        {!activeSection ? (
+        {!activeSection && featuredTemplates.length ? (
+          <div>
+            <div className="mb-6 text-center">
+              <h2 className="mt-2 text-2xl font-extrabold text-slate-950 sm:text-3xl">
+                Mẫu thiệp nổi bật
+              </h2>
+              <p className="mx-auto mt-2 max-w-xl text-sm text-slate-500 sm:text-base">
+                Những mẫu thiệp được nhiều cặp đôi lựa chọn và yêu thích nhất, bạn có thể xem trước và chọn mẫu phù hợp với mình.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+              {featuredTemplates.map((item) => (
+                <a
+                  className="group overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-[0_10px_24px_rgba(229,65,83,0.08)] transition hover:-translate-y-1 hover:border-rose-300"
+                  href={item.url}
+                  key={item.id}
+                  onClick={() => trackTemplateClick("wedding", item)}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <div className="relative aspect-[2/3] overflow-hidden bg-rose-50">
+                    <img
+                      alt={`Mẫu thiệp ${item.displayNumber}`}
+                      className="template-preview-image"
+                      decoding="async"
+                      loading="lazy"
+                      src={item.image}
+                    />
+                    <span className="absolute left-2 top-2 rounded-full bg-white/95 px-2.5 py-1 text-xs font-extrabold text-rose-500 shadow-sm">
+                      Mẫu {item.displayNumber}
+                    </span>
+                    <span className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-rose-500 px-3 py-2 text-xs font-extrabold text-white opacity-0 shadow-lg transition group-hover:opacity-100">
+                      Xem thiệp
+                    </span>
+                  </div>
+                </a>
+              ))}
+            </div>
+            <div className="mt-6 text-center">
+              <a
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-rose-500 px-6 text-sm font-extrabold text-white transition hover:bg-rose-600"
+                href="/templates"
+              >
+                Xem tất cả mẫu thiệp
+              </a>
+            </div>
+          </div>
+        ) : !activeSection ? (
           <div className="rounded-2xl border border-dashed border-rose-200 bg-white/90 p-5 text-center shadow-[0_12px_30px_rgba(229,65,83,0.07)] sm:p-6">
             <Link2 className="mx-auto size-10 rounded-2xl bg-rose-50 p-2.5 text-rose-500 sm:size-11" />
             <h2 className="mt-4 text-xl font-extrabold text-slate-950 sm:text-2xl">

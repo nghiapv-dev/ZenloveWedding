@@ -31,6 +31,7 @@ function App() {
     "/admin": "dashboard",
     "/admin/dashboard": "dashboard",
     "/admin/templates": "templates",
+    "/admin/featured-templates": "featured-templates",
     "/admin/orders": "orders-all",
     "/admin/orders/customer": "orders-customer",
     "/admin/orders/studio": "orders-studio",

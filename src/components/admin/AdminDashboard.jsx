@@ -29,6 +29,7 @@ import {
 } from "../../lib/adminSession.js";
 import { serviceDemoSections } from "../../data/siteData.jsx";
 import AdminTemplates from "./AdminTemplates.jsx";
+import AdminFeaturedTemplates from "./AdminFeaturedTemplates.jsx";
 import AdminMusic from "./AdminMusic.jsx";
 import AdminShowcase from "./AdminShowcase.jsx";
 import AdminSystem from "./AdminSystem.jsx";
@@ -514,6 +515,7 @@ function AdminDashboard({ activeView = "dashboard", onNavigate }) {
     );
   const workspace = {
     templates: <AdminTemplates />,
+    "featured-templates": <AdminFeaturedTemplates session={session} onNavigate={onNavigate} />,
     "orders-all": <AdminOrders scope="all" />,
     "orders-customer": <AdminOrders scope="customer" />,
     "orders-studio": <AdminOrders scope="studio" />,
