@@ -3,15 +3,7 @@ import { ExternalLink, Link2, Play, X } from "lucide-react";
 import { serviceDemoSections } from "../../data/siteData.jsx";
 import ImageModal from "../shared/ImageModal.jsx";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase.js";
-
-function normalizeZenLovePreviewUrl(url, slug) {
-  if (slug) return `https://zenlove.me/template-preview/${slug}`;
-  if (!url) return url;
-  return url.replace(
-    "https://zenlove.me/templates/",
-    "https://zenlove.me/template-preview/",
-  );
-}
+import { zenLoveTemplatePreviewUrl } from "../../lib/zenloveTemplateUrl.js";
 
 function videoEmbedUrl(url) {
   if (!url) return "";
@@ -90,7 +82,7 @@ function DemoShowcase({ activeCategory, hideHeader = false }) {
         setCloudWeddingTemplates(
           (data || []).map((item, index) => ({
             title: item.title || "Mẫu " + (index + 1),
-            url: normalizeZenLovePreviewUrl(item.url, item.slug),
+            url: zenLoveTemplatePreviewUrl(item.url, item.slug),
             image: item.image_url,
             analyticsKey: item.zenlove_id || item.slug || item.id,
           })),

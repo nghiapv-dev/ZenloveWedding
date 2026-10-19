@@ -17,6 +17,7 @@ import {
   supabase,
   templatesBucket,
 } from "../../lib/supabase.js";
+import { zenLoveTemplatePreviewUrl } from "../../lib/zenloveTemplateUrl.js";
 
 function safeFileName(name) {
   return name
@@ -227,7 +228,7 @@ function AdminTemplates() {
         .insert({
           owner_id: session.user.id,
           title: title.trim() || "Mẫu " + (templates.length + 36),
-          url: url.trim(),
+          url: zenLoveTemplatePreviewUrl(url.trim()),
           image_path: path,
           image_url: publicData.publicUrl,
           sort_order: templates.length + 1,
@@ -415,7 +416,7 @@ function AdminTemplates() {
             </label>
             <input
               className="mt-2 h-11 w-full rounded-xl border border-rose-100 bg-rose-50/50 px-3 text-sm outline-none"
-              placeholder="https://zenlove.me/template-preview/..."
+              placeholder="https://zenlove.me/template/ten-mau/preview"
               type="url"
               value={url}
               onChange={(event) => setUrl(event.target.value)}
@@ -526,7 +527,7 @@ function AdminTemplates() {
                     <div className="min-w-0">
                       <a
                         className="block text-sm font-extrabold text-slate-900 hover:text-rose-500"
-                        href={item.url}
+                        href={zenLoveTemplatePreviewUrl(item.url, item.slug)}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -553,7 +554,7 @@ function AdminTemplates() {
                       </button>
                       <a
                         className="grid size-8 place-items-center rounded-full bg-rose-50 text-rose-500"
-                        href={item.url}
+                        href={zenLoveTemplatePreviewUrl(item.url, item.slug)}
                         target="_blank"
                         rel="noreferrer"
                         aria-label="Mở mẫu"
